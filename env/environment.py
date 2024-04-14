@@ -8,6 +8,7 @@ from subprocess import Popen
 from sender import Sender
 import project_root
 from helpers.helpers import get_open_udp_port
+from concurrent import futures
 
 
 class Environment(object): # 训练环境
@@ -41,20 +42,17 @@ class Environment(object): # 训练环境
             self.senders.append(sender)
 
             # start receiver in a subprocess
-            sys.stderr.write('Starting receiver...\n')
-            receiver_src = path.join(
-                project_root.DIR, 'env', 'run_receiver.py')
-            recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port)
-            subcmds += recv_cmd
-            if port < port0 + self.flows - 1:
-                subcmds += ' & '
+
              # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
             # sys.stderr.write('$ %s\n' % cmd)
 
 
             # sender completes the handshake sent from receiver
 
-        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, subcmds)
+        receiver_src = path.join(
+            project_root.DIR, 'env', 'run_receiver.py')
+        recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port0)
+        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd)
         self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
         for sender in self.senders:
             sender.handshake()
@@ -65,8 +63,13 @@ class Environment(object): # 训练环境
 
         sys.stderr.write('Obtaining an episode from environment...\n')
         rewards = 0
+        executor = futures.ThreadPoolExecutor(max_workers=2)
+        fus = []
         for sender in self.senders:
-            rewards += sender.run()
+            future = executor.submit(sender.run(), 2)
+            fus.append(future)
+        for fu in fus:
+            rewards += fu.result()
         return rewards / self.flows # 返回最后一个时刻的奖励
 
     def cleanup(self):

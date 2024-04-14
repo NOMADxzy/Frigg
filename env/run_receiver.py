@@ -17,7 +17,11 @@
 
 import argparse
 from receiver import Receiver
+import threading
 
+def run_receiver(receiver):
+    receiver.handshake()
+    receiver.run()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -25,15 +29,25 @@ def main():
     parser.add_argument('port', type=int)
     args = parser.parse_args()
 
-    receiver = Receiver(args.ip, args.port)
+
+    threads = []
+    receivers = []
+    for i in range(0,3):
+        receiver = Receiver(args.ip, args.port + i)
+        threads.append(threading.Thread(target=run_receiver))
+        receivers.append(receiver)
 
     try:
-        receiver.handshake()
-        receiver.run()
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
     except KeyboardInterrupt:
         pass
     finally:
-        receiver.cleanup()
+        for receiver in receivers:
+            receiver.cleanup()
 
 
 if __name__ == '__main__':
