@@ -17,8 +17,9 @@ class Environment(object): # 训练环境
         self.action_cnt = Sender.action_cnt
 
         # variables below will be filled in during setup
-        self.sender = None
-        self.receiver = None
+        self.flows = 3
+        self.senders = []
+        self.receivers = None
 
     def set_sample_action(self, sample_action):
         """Set the sender's policy. Must be called before calling reset()."""
@@ -30,39 +31,50 @@ class Environment(object): # 训练环境
 
         self.cleanup()
 
-        self.port = get_open_udp_port()
+        port0 = get_open_udp_port()
+        cmd = "%s -- sh -c " % self.mahimahi_cmd
+        for port in range(port0, port0+self.flows):
+            # start sender as an instance of Sender class
+            sys.stderr.write('Starting sender...\n')
+            sender = Sender(port, train=True)
+            sender.set_sample_action(self.sample_action)
+            self.senders.append(sender)
 
-        # start sender as an instance of Sender class
-        sys.stderr.write('Starting sender...\n')
-        self.sender = Sender(self.port, train=True)
-        self.sender.set_sample_action(self.sample_action)
+            # start receiver in a subprocess
+            sys.stderr.write('Starting receiver...\n')
+            receiver_src = path.join(
+                project_root.DIR, 'env', 'run_receiver.py')
+            recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port)
+            cmd += recv_cmd + ' & '
+             # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
+            sys.stderr.write('$ %s\n' % cmd)
 
-        # start receiver in a subprocess
-        sys.stderr.write('Starting receiver...\n')
-        receiver_src = path.join(
-            project_root.DIR, 'env', 'run_receiver.py')
-        recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, self.port)
-        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd) # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
-        sys.stderr.write('$ %s\n' % cmd)
-        self.receiver = Popen(cmd, preexec_fn=os.setsid, shell=True)
 
-        # sender completes the handshake sent from receiver
-        self.sender.handshake()
+            # sender completes the handshake sent from receiver
+
+            sender.handshake()
+
+        cmd += "'"
+        self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
+
 
     def rollout(self):
         """Run sender in env, get final reward of an episode, reset sender."""
 
         sys.stderr.write('Obtaining an episode from environment...\n')
-        return self.sender.run() # 返回最后一个时刻的奖励
+        rewards = 0
+        for sender in self.senders:
+            rewards += sender.run()
+        return rewards / self.flows # 返回最后一个时刻的奖励
 
     def cleanup(self):
-        if self.sender:
-            self.sender.cleanup()
-            self.sender = None
-
-        if self.receiver:
+        for sender in self.senders:
+            if sender:
+                sender.cleanup()
+        self.senders = []
+        if self.receivers:
             try:
-                os.killpg(os.getpgid(self.receiver.pid), signal.SIGTERM)
+                os.killpg(os.getpgid(self.receivers.pid), signal.SIGTERM)
             except OSError as e:
                 sys.stderr.write('%s\n' % e)
             finally:
