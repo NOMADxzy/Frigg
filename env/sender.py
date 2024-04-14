@@ -35,6 +35,7 @@ class Sender(object):
 
     def __init__(self, port=0, train=False, debug=False):
         self.train = train
+        self.port = port
         self.debug = debug
 
         # UDP socket and poller
