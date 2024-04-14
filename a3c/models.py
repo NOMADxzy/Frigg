@@ -1,4 +1,5 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+
 import tensorflow as tf
 from tensorflow.contrib import layers, rnn
 
