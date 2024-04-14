@@ -16,6 +16,8 @@
 
 
 import argparse
+import time
+
 from receiver import Receiver
 import threading
 
@@ -41,8 +43,7 @@ def main():
         for thread in threads:
             thread.start()
 
-        for thread in threads:
-            thread.join()
+        time.sleep(100)
     except KeyboardInterrupt:
         pass
     finally:
