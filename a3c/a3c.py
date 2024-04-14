@@ -63,7 +63,7 @@ class A3C(object):
             self.check_point =1500 
             self.learn_rate = 1e-3
         else:
-            self.max_global_step = 30
+            self.max_global_step = 1000
             self.check_point = 10
             self.learn_rate = 2*1e-5
 
