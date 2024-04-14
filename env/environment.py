@@ -32,7 +32,7 @@ class Environment(object): # 训练环境
         self.cleanup()
 
         port0 = get_open_udp_port()
-        subcmds = ""
+        subcmds = ''
         for port in range(port0, port0+self.flows):
             # start sender as an instance of Sender class
             sys.stderr.write('Starting sender...\n')
@@ -45,7 +45,9 @@ class Environment(object): # 训练环境
             receiver_src = path.join(
                 project_root.DIR, 'env', 'run_receiver.py')
             recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port)
-            subcmds += recv_cmd + ' & '
+            subcmds += recv_cmd
+            if port < port0 + self.flows - 1:
+                subcmds += ' & '
              # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
             # sys.stderr.write('$ %s\n' % cmd)
 
