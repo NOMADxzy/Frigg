@@ -52,10 +52,10 @@ class Environment(object): # 训练环境
 
             # sender completes the handshake sent from receiver
 
-            sender.handshake()
-
         cmd += "'"
         self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
+        for sender in self.senders:
+            sender.handshake()
 
 
     def rollout(self):
