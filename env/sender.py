@@ -205,7 +205,8 @@ class Sender(object):
 
             if self.train:
                 input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
-                                     port=self.port)).state
+                                     port=self.port))
+                assert self.port == input_state.port
                 state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
                 action = self.sample_action(state)
                 self.take_action(action)
