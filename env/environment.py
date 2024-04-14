@@ -32,7 +32,7 @@ class Environment(object): # 训练环境
         self.cleanup()
 
         port0 = get_open_udp_port()
-        cmd = "%s -- sh -c " % self.mahimahi_cmd
+        subcmds = ""
         for port in range(port0, port0+self.flows):
             # start sender as an instance of Sender class
             sys.stderr.write('Starting sender...\n')
@@ -45,14 +45,14 @@ class Environment(object): # 训练环境
             receiver_src = path.join(
                 project_root.DIR, 'env', 'run_receiver.py')
             recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port)
-            cmd += recv_cmd + ' & '
+            subcmds += recv_cmd + ' & '
              # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
-            sys.stderr.write('$ %s\n' % cmd)
+            # sys.stderr.write('$ %s\n' % cmd)
 
 
             # sender completes the handshake sent from receiver
 
-        cmd += "'"
+        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, subcmds)
         self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
         for sender in self.senders:
             sender.handshake()
