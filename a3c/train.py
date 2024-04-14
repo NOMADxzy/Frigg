@@ -10,14 +10,26 @@ from os import path
 from subprocess import Popen, call
 from helpers.helpers import get_open_udp_port
 
-
+# 参数服务器 (ps):
+# 职责: 参数服务器负责存储和更新模型参数。在典型的分布式训练设置中，每个参数服务器维护一部分全局模型参数的状态。
+#
+# 操作: 当 worker 节点完成一部分数据的处理，并计算出梯度后，它们会将这些梯度发送到对应的参数服务器。参数服务器使用这些梯度来更新它存储的模型参数。
+#
+# 目的: 通过使用参数服务器，模型训练可以跨多个 worker 节点进行扩展，而模型参数保持一致和同步。
+#
+# Worker:
+# 职责: 工作节点（worker）主要负责执行计算任务，包括前向传播、反向传播和梯度计算。
+#
+# 操作: 在每次迭代中，worker 从参数服务器获取当前的模型参数，计算它们自己分配到的数据批次上的梯度，然后将这些梯度发送回参数服务器以更新模型。
+#
+# 目的: 每个 worker 可以独立地处理输入数据的不同子集，从而实现数据并行性，并加速整体训练过程。
 def run(args):
     # run worker.py on ps and worker hosts
     for job_name in ['ps', 'worker']:
         host_list = args[job_name + '_list']
         procs = args[job_name + '_procs']
 
-        for i in xrange(len(host_list)):
+        for i in xrange(len(host_list)): # 不同的host有不同的带宽，[30,40,50,60]
             ssh_cmd = ['ssh', host_list[i]]
 
             cmd = ['python', args['worker_src'],

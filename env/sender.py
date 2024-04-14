@@ -10,6 +10,7 @@ import project_root
 from helpers.helpers import (
     curr_ts_ms, apply_op,
     READ_FLAGS, ERR_FLAGS, READ_ERR_FLAGS, WRITE_FLAGS, ALL_FLAGS)
+import indigo_pb2_grpc, grpc, indigo_pb2
 
 
 def format_actions(action_list):
@@ -56,6 +57,9 @@ class Sender(object):
         self.next_ack = 0
         self.cwnd = 10.0
         self.step_len_ms = 10
+
+        channel = grpc.insecure_channel('localhost:50053')
+        self.stub = indigo_pb2_grpc.acerServiceStub(channel)
 
         # state variables for RLCC
         self.delivered_time = 0
@@ -149,6 +153,9 @@ class Sender(object):
         self.cwnd = apply_op(op, self.cwnd, val)
         self.cwnd = max(2.0, self.cwnd)
 
+    def set_cwnd(self, cwnd):
+        self.cwnd = max(2.0, cwnd)
+
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
 
@@ -193,12 +200,22 @@ class Sender(object):
             if self.debug:
                 start_sample = time.time()
 
-            action = self.sample_action(state)
+            if self.train:
+                input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
+                                     port=self.port)).state
+                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
+                action = self.sample_action(state)
+                self.take_action(action)
+            else:
+                cwnd_val = self.stub.GetExplorationAction(
+                    indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
+                                     port=self.port)).action
+                self.set_cwnd(cwnd_val)
+
 
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))
 
-            self.take_action(action)
 
             self.delay_ewma = None
             self.delivery_rate_ewma = None
@@ -250,9 +267,9 @@ class Sender(object):
                 if flag & WRITE_FLAGS:
                     if self.window_is_open():
                         self.send()
-        return r
+        return r # 返回最后一刻的奖励
 
-    def compute_performance(self):
+    def compute_performance(self): # 计算奖励
         print("****************IN COMPUTE_PERFORMANCE*********************")
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration

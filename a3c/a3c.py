@@ -12,25 +12,26 @@ from helpers.helpers import make_sure_path_exists
 def normalize_state_buf(step_state_buf):
     norm_state_buf = np.asarray(step_state_buf, dtype=np.float32)
     for i in xrange(1):
-        norm_state_buf[:, i][norm_state_buf[:, i] < 1.0] = 1.0
-        norm_state_buf[:, i] = np.log(norm_state_buf[:, i])
+        norm_state_buf[:, i][norm_state_buf[:, i] < 1.0] = 1.0 # 小于 1.0 的值，则将这些值设置为 1.0，避免在下一步取对数时出现负无穷大或复数的情况
+        norm_state_buf[:, i] = np.log(norm_state_buf[:, i]) # 替换为它们的自然对数值，使其更接近正态分布，通常可以改善机器学习模型的性能
 
     return norm_state_buf
 
-
-def ewma(data, window):
+# 指数加权移动平均（Exponential Weighted Moving Average，EWMA）是一种统计技术，用于分析时间序列数据。
+# 它通过赋予更近期的观测值以更高的权重来计算平均值，能够反映出数据的最近趋势和模式
+def ewma(data, window): # 指数加权移动平均处理
     alpha = 2 /(window + 1.0)
-    alpha_rev = 1-alpha
-    n = data.shape[0]
+    alpha_rev = 1-alpha # 1/2
+    n = data.shape[0] # 4
 
-    pows = alpha_rev**(np.arange(n+1))
+    pows = alpha_rev**(np.arange(n+1)) # (0,1,2,3,4)
 
-    scale_arr = 1/pows[:-1]
-    offset = data[0]*pows[1:]
+    scale_arr = 1/pows[:-1] # 1/(0,1,2,3)
+    offset = data[0]*pows[1:] # (1,2,3,4)
     pw0 = alpha*alpha_rev**(n-1)
 
     mult = data*pw0*scale_arr
-    cumsums = mult.cumsum()
+    cumsums = mult.cumsum() # 前缀和
     out = offset + cumsums*scale_arr[::-1]
     return out
 
@@ -113,7 +114,7 @@ class A3C(object):
 
         self.actions = tf.placeholder(tf.int32, [None])
         # cross entropy loss
-        cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        cross_entropy_loss = tf.nn.sparse_softmax_cross_entropy_with_logits( # 交叉熵损失
             logits=pi.action_scores, labels=self.actions)
 
         if self.dagger:
@@ -131,10 +132,10 @@ class A3C(object):
             self.advantages = tf.placeholder(tf.float32, [None])
 
             # policy loss
-            policy_loss = tf.reduce_mean(cross_entropy_loss * self.advantages)
+            policy_loss = tf.reduce_mean(cross_entropy_loss * self.advantages) # 策略损失
 
             # value loss
-            value_loss = 0.5 * tf.reduce_mean(tf.square(
+            value_loss = 0.5 * tf.reduce_mean(tf.square( # 价值损失
                 self.rewards - pi.state_values))
 
             # add entropy to loss to encourage exploration
@@ -142,7 +143,7 @@ class A3C(object):
             entropy = -tf.reduce_mean(pi.action_probs * log_action_probs)
 
             # total loss
-            loss = policy_loss + 0.5 * value_loss - 0.01 * entropy
+            loss = policy_loss + 0.5 * value_loss - 0.01 * entropy # 总损失
 
         grads = tf.gradients(loss, pi.trainable_vars)
         grads, _ = tf.clip_by_global_norm(grads, 10.0)
@@ -153,13 +154,13 @@ class A3C(object):
 
         optimizer = tf.train.AdamOptimizer(self.learn_rate)
         self.train_op = tf.group(
-            optimizer.apply_gradients(grads_and_vars), inc_global_step)
+            optimizer.apply_gradients(grads_and_vars), inc_global_step) # 将计算出的梯度应用到全局网络的参数上，同时更新全局步数
 
         # sync local network to global network
-        self.sync_op = tf.group(*[v1.assign(v2) for v1, v2 in zip(
+        self.sync_op = tf.group(*[v1.assign(v2) for v1, v2 in zip( # 将全局网络的参数复制到本地网络中
             pi.trainable_vars, self.global_network.trainable_vars)])
 
-        # summary related
+        # TensorBoard 看板数据
         tf.summary.scalar('total_loss', loss)
         tf.summary.scalar('grad_global_norm', tf.global_norm(grads))
         tf.summary.scalar('var_global_norm', tf.global_norm(pi.trainable_vars))
@@ -265,7 +266,7 @@ class A3C(object):
         saver.save(self.session, model_path)
         sys.stderr.write('\nModel saved to worker-0:%s\n' % model_path)
 
-    def rollout(self):
+    def rollout(self): # 用于生成回合（episode）的一个步骤序列，并计算每个步骤的优势函数（advantage values）
         print("************************IN ROLLOUT**************************")
         # reset buffers for states, actions, LSTM states, etc.
         self.state_buf = []
@@ -280,7 +281,7 @@ class A3C(object):
         self.env.reset()
 
         # get an episode of rollout
-        final_reward = self.env.rollout()
+        final_reward = self.env.rollout() # 执行策略并收集一系列状态、动作和奖励等数据，self.sender.run()
         print(final_reward)
 
         # state_buf, indices, action_buf, etc. should have been filled in
@@ -290,7 +291,7 @@ class A3C(object):
         if not self.dagger:
             assert len(self.value_buf) == episode_len
 
-            # compute discounted returns
+            # 每个时间点处的奖励为下一个时间点的奖励乘以折扣因子 gamma，加上当前时间点的即时奖励
             gamma = 0.9
             if gamma == 1.0:
                 self.reward_buf = np.full(episode_len, final_reward)
@@ -334,12 +335,13 @@ class A3C(object):
                     #pi.lstm_state_in: pi.lstm_state_init,
                 })
             else:
+                # 这是需要在会话中运行的操作列表。它可以包括模型的优化器更新步骤、变量评估或任何其他定义在计算图中的操作
                 ret = self.session.run(ops_to_run, {
                     pi.states: self.state_buf,
-                    pi.indices: self.indices,
+                    pi.indices: self.indices, # 构建 LSTM 时选择序列中的特定时间点
                     self.actions: self.action_buf,
                     self.rewards: self.reward_buf,
-                    self.advantages: self.adv_buf,
+                    self.advantages: self.adv_buf, # 优势函数
                     #pi.lstm_state_in: pi.lstm_state_init,
                 })
 
@@ -350,11 +352,11 @@ class A3C(object):
                 self.summary_writer.add_summary(ret[2], global_step)
                 self.summary_writer.flush()
 
-            if self.is_chief and global_step >= check_point:
+            if self.is_chief and global_step >= check_point: # 首领 保存模型
                 with tf.device(self.worker_device):
                     self.save_model(check_point)
                 check_point += self.check_point
 
-        if self.is_chief:
+        if self.is_chief: # 首领 保存模型
             with tf.device(self.worker_device):
                 self.save_model()

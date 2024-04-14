@@ -8,7 +8,7 @@ import project_root
 from helpers.helpers import get_open_udp_port
 
 
-class Environment(object):
+class Environment(object): # 训练环境
     def __init__(self, mahimahi_cmd):
         self.mahimahi_cmd = mahimahi_cmd
         self.state_dim = Sender.state_dim
@@ -40,7 +40,7 @@ class Environment(object):
         receiver_src = path.join(
             project_root.DIR, 'env', 'run_receiver.py')
         recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, self.port)
-        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd)
+        cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd) # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
         sys.stderr.write('$ %s\n' % cmd)
         self.receiver = Popen(cmd, preexec_fn=os.setsid, shell=True)
 
@@ -51,7 +51,7 @@ class Environment(object):
         """Run sender in env, get final reward of an episode, reset sender."""
 
         sys.stderr.write('Obtaining an episode from environment...\n')
-        return self.sender.run()
+        return self.sender.run() # 返回最后一个时刻的奖励
 
     def cleanup(self):
         if self.sender:
