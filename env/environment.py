@@ -63,12 +63,12 @@ class Environment(object): # 训练环境
     def rollout(self):
         """Run sender in env, get final reward of an episode, reset sender."""
 
-        sys.stderr.write('Obtaining an episode from environment...\n')
+        sys.stderr.write('[environment.py] Obtaining an episode from environment...\n')
         rewards = 0
         executor = futures.ThreadPoolExecutor(max_workers=5)
         fus = []
         for sender in self.senders:
-            print "submit sender " + str(sender.port)
+            sys.stderr.write("submit sender " + str(sender.port))
             future = executor.submit(sender.run(),)
             fus.append(future)
         for fu in fus:
