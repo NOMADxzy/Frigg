@@ -17,38 +17,16 @@
 
 import argparse
 import time
+from concurrent import futures
 
 from receiver import Receiver
 import threading
+
 
 def run_receiver(receiver):
     receiver.handshake()
     receiver.run()
 
-# def main():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('ip', metavar='IP')
-#     parser.add_argument('port', type=int)
-#     args = parser.parse_args()
-#
-#
-#     threads = []
-#     receivers = []
-#     for i in range(0,3):
-#         receiver = Receiver(args.ip, args.port + i)
-#         threads.append(threading.Thread(target=run_receiver, args=(receiver,)))
-#         receivers.append(receiver)
-#
-#     try:
-#         for thread in threads:
-#             thread.start()
-#
-#         time.sleep(100)
-#     except KeyboardInterrupt:
-#         pass
-#     finally:
-#         for receiver in receivers:
-#             receiver.cleanup()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -56,15 +34,40 @@ def main():
     parser.add_argument('port', type=int)
     args = parser.parse_args()
 
-    receiver = Receiver(args.ip, args.port)
+    receivers = []
+    for i in range(0, 3):
+        receiver = Receiver(args.ip, args.port + i)
+        receivers.append(receiver)
 
     try:
-        receiver.handshake()
-        receiver.run()
+        executor = futures.ThreadPoolExecutor(max_workers=5)
+        fus = []
+        for receiver in receivers:
+            fus.append(executor.submit(run_receiver, receiver))
+        for fu in fus:
+            fu.result()
     except KeyboardInterrupt:
         pass
     finally:
-        receiver.cleanup()
+        for receiver in receivers:
+            receiver.cleanup()
+
+
+# def main():
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('ip', metavar='IP')
+#     parser.add_argument('port', type=int)
+#     args = parser.parse_args()
+#
+#     receiver = Receiver(args.ip, args.port)
+#
+#     try:
+#         receiver.handshake()
+#         receiver.run()
+#     except KeyboardInterrupt:
+#         pass
+#     finally:
+#         receiver.cleanup()
 
 if __name__ == '__main__':
     main()
