@@ -11,7 +11,7 @@ from helpers.helpers import get_open_udp_port
 from concurrent import futures
 
 
-class Environment(object): # 训练环境
+class Environment(object):  # 训练环境
     def __init__(self, mahimahi_cmd):
         self.mahimahi_cmd = mahimahi_cmd
         self.state_dim = Sender.state_dim
@@ -34,7 +34,7 @@ class Environment(object): # 训练环境
 
         port0 = get_open_udp_port()
         subcmds = ''
-        for port in range(port0, port0+self.flows):
+        for port in range(port0, port0 + self.flows):
             # start sender as an instance of Sender class
             sys.stderr.write('Starting sender...\n')
             sender = Sender(port, train=True)
@@ -43,9 +43,8 @@ class Environment(object): # 训练环境
 
             # start receiver in a subprocess
 
-             # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
+            # sh -c 'command1 & command2 & command3 &' 三个命令能够并行（即同时）执行
             # sys.stderr.write('$ %s\n' % cmd)
-
 
             # sender completes the handshake sent from receiver
 
@@ -59,8 +58,6 @@ class Environment(object): # 训练环境
             sender.handshake()
 
 
-
-
     def rollout(self):
         """Run sender in env, get final reward of an episode, reset sender."""
 
@@ -69,12 +66,12 @@ class Environment(object): # 训练环境
         executor = futures.ThreadPoolExecutor(max_workers=5)
         fus = []
         for sender in self.senders:
-            sys.stderr.write("submit sender " + str(sender.port))
-            future = executor.submit(sender.run(),)
+            sys.stderr.write("submit sender " + str(sender.port) + "\n")
+            future = executor.submit(sender.run, )
             fus.append(future)
         for fu in fus:
             rewards += fu.result()
-        return rewards / self.flows # 返回最后一个时刻的奖励
+        return rewards / self.flows  # 返回最后一个时刻的奖励
 
     def cleanup(self):
         for sender in self.senders:

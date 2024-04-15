@@ -238,7 +238,7 @@ class Sender(object):
 
     def run(self):
         TIMEOUT = 1000  # ms
-        sys.stderr.write("start run sender " + str(self.port))
+        sys.stderr.write("start run sender " + str(self.port) + "\n")
 
         self.poller.modify(self.sock, ALL_FLAGS)
         curr_flags = ALL_FLAGS
