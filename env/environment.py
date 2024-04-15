@@ -54,10 +54,11 @@ class Environment(object): # 训练环境
         recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port0)
         cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd)
 
+        self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
         for sender in self.senders:
             sender.handshake()
 
-        self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
+
 
 
     def rollout(self):
