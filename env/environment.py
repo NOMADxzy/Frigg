@@ -53,9 +53,11 @@ class Environment(object): # 训练环境
             project_root.DIR, 'env', 'run_receiver.py')
         recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port0)
         cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd)
-        self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
+
         for sender in self.senders:
             sender.handshake()
+
+        self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
 
 
     def rollout(self):
@@ -66,6 +68,7 @@ class Environment(object): # 训练环境
         executor = futures.ThreadPoolExecutor(max_workers=5)
         fus = []
         for sender in self.senders:
+            print "submit sender " + str(sender.port)
             future = executor.submit(sender.run(),)
             fus.append(future)
         for fu in fus:
