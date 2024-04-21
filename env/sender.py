@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os.path, copy
 import time
 import sys
 import json
@@ -77,6 +77,10 @@ class Sender(object):
         self.step_start_ms = None
         self.running = True
 
+        self.start_seq = self.seq_num
+        self.arrive_cnt = 0
+        self.loss_rate = 0
+
         if self.train:
             self.step_cnt = 0
 
@@ -111,6 +115,7 @@ class Sender(object):
     def update_state(self, ack):
         """ Update the state variables listed in __init__() """
         self.next_ack = max(self.next_ack, ack.seq_num + 1)
+        self.arrive_cnt += 1
         curr_time_ms = curr_ts_ms()
 
         # Update RTT
@@ -194,10 +199,19 @@ class Sender(object):
 
         # At each step end, feed the state:
         if curr_ts_ms() - self.step_start_ms > self.step_len_ms:  # step's end
+            loss_rate = max(0, 1 - self.arrive_cnt / (ack.seq_num - self.start_seq))
             state = [self.delay_ewma,
                      self.delivery_rate_ewma,
                      self.send_rate_ewma,
                      self.cwnd]
+
+            # 统计
+            new_line = copy.deepcopy(state)
+            new_line.append(loss_rate)
+            with open('data.csv', 'a') as f:
+                # 将数据点转换为逗号分隔的字符串，然后写入文件
+                f.write(','.join(map(str, new_line)) + '\n')
+
 
             # time how long it takes to get an action from the NN
             if self.debug:
@@ -211,9 +225,19 @@ class Sender(object):
                 action = self.sample_action(state)
                 self.take_action(action)
             else:
+                start_time = time.time()
+                # 要计时的代码
                 cwnd_val = self.stub.GetExplorationAction(
                     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port)).action
+
+
+                end_time = time.time()
+                elapsed_time = end_time - start_time
+                infer_time_file = "./infer_time.txt"
+                if not os.path.exists(infer_time_file):
+                    with open(infer_time_file, "w") as f:
+                        f.write(str(elapsed_time))
                 self.set_cwnd(cwnd_val)
 
 
@@ -224,6 +248,8 @@ class Sender(object):
             self.delay_ewma = None
             self.delivery_rate_ewma = None
             self.send_rate_ewma = None
+            self.start_seq = self.seq_num
+            self.arrive_cnt = 0
 
             self.step_start_ms = curr_ts_ms()
 
