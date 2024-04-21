@@ -198,8 +198,10 @@ class Sender(object):
             self.step_start_ms = curr_ts_ms()
 
         # At each step end, feed the state:
-        if curr_ts_ms() - self.step_start_ms > self.step_len_ms:  # step's end
-            loss_rate = max(0, 1 - self.arrive_cnt / (ack.seq_num - self.start_seq))
+        if curr_ts_ms() - self.step_start_ms > self.step_len_ms:  # step's end、
+            loss_rate = 0
+            if ack.seq_num - self.start_seq > 0:
+                loss_rate = max(0, 1 - self.arrive_cnt / (ack.seq_num - self.start_seq))
             state = [self.delay_ewma,
                      self.delivery_rate_ewma,
                      self.send_rate_ewma,
