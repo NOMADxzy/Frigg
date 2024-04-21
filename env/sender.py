@@ -210,6 +210,7 @@ class Sender(object):
             # 统计
             new_line = copy.deepcopy(state)
             new_line.append(loss_rate)
+            new_line.append(ack.seq_num)
             with open('data.csv', 'a') as f:
                 # 将数据点转换为逗号分隔的字符串，然后写入文件
                 f.write(','.join(map(str, new_line)) + '\n')
