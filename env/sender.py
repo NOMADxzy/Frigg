@@ -29,7 +29,7 @@ def format_actions(action_list):
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
-    state_dim = 4
+    state_dim = 6 # TODO 更改维度
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
@@ -207,24 +207,24 @@ class Sender(object):
                      self.send_rate_ewma,
                      self.cwnd]
 
-            # 统计
-            new_line = copy.deepcopy(state)
-            new_line.append(loss_rate)
-            new_line.append(ack.seq_num)
-            with open('data.csv', 'a') as f:
-                # 将数据点转换为逗号分隔的字符串，然后写入文件
-                f.write(','.join(map(str, new_line)) + '\n')
-
 
             # time how long it takes to get an action from the NN
             if self.debug:
                 start_sample = time.time()
 
             if self.train:
+                # 统计
+                new_line = copy.deepcopy(state)
+                new_line.append(loss_rate)
+                new_line.append(ack.seq_num)
+                with open('data.csv', 'a') as f:
+                    # 将数据点转换为逗号分隔的字符串，然后写入文件
+                    f.write(','.join(map(str, new_line)) + '\n')
+
                 input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port))
                 assert self.port == input_state.port
-                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
+                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd, input_state.avg_cwnd, input_state.variance]
                 action = self.sample_action(state)
                 self.take_action(action)
             else:
@@ -262,7 +262,7 @@ class Sender(object):
                     self.step_cnt = 0
                     self.running = False
 
-                    k=self.compute_performance()
+                    k=self.compute_performance(loss_rate)
         return k
 
     def run(self):
@@ -303,14 +303,15 @@ class Sender(object):
                         self.send()
         return r # 返回最后一刻的奖励
 
-    def compute_performance(self): # 计算奖励
+    def compute_performance(self, loss_rate): # 计算奖励
         print("****************IN COMPUTE_PERFORMANCE*********************")
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
         print(tput)
         print(perc_delay)
-        return 10*tput - perc_delay
+        print loss_rate
+        return 10*tput - perc_delay - 1000*loss_rate
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))

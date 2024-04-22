@@ -199,7 +199,8 @@ class A3C(object):
         # norm_state_buf = normalize_state_buf(step_state_buf)
 
         # state = EWMA of past step
-        ewma_delay = ewma(flat_step_state_buf, 3)
+        # ewma_delay = ewma(flat_step_state_buf, 3)
+        ewma_delay = flat_step_state_buf
 
         self.state_buf.extend([ewma_delay])
         last_index = self.indices[-1] if len(self.indices) > 0 else -1
