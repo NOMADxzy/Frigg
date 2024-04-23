@@ -29,7 +29,7 @@ def format_actions(action_list):
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
-    state_dim = 6 # TODO 更改维度
+    state_dim = 9 # TODO 更改维度
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
@@ -224,7 +224,9 @@ class Sender(object):
                 input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port))
                 assert self.port == input_state.port
-                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd, input_state.avg_cwnd, input_state.variance]
+                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
+                for e in input_state.nums:
+                    state.append(e)
                 action = self.sample_action(state[:self.state_dim])
                 self.take_action(action)
             else:
@@ -311,7 +313,7 @@ class Sender(object):
         print(tput)
         print perc_delay
         # print self.rtt_buf
-        # print loss_rate
+        print loss_rate
         return 10*tput - perc_delay/10 - 1000*loss_rate
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
