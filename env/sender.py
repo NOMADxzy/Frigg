@@ -312,7 +312,7 @@ class Sender(object):
         perc_delay = np.percentile(self.rtt_buf, 95)
         print(tput)
         print perc_delay
-        # print self.rtt_buf
+        print self.rtt_buf
         print loss_rate
         return 10*tput - perc_delay - 1000*loss_rate
 
