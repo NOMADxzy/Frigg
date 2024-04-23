@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cindigo.proto\x12\x07service\"\\\n\x05State\x12\r\n\x05\x64\x65lay\x18\x01 \x01(\x02\x12\x15\n\rdelivery_rate\x18\x02 \x01(\x02\x12\x11\n\tsend_rate\x18\x03 \x01(\x02\x12\x0c\n\x04\x63wnd\x18\x04 \x01(\x02\x12\x0c\n\x04port\x18\x05 \x01(\x05\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x02\"\x07\n\x05\x45mpty2v\n\x0b\x61\x63\x65rService\x12\x37\n\x14GetExplorationAction\x12\x0e.service.State\x1a\x0f.service.Action\x12.\n\x0cUpdateMetric\x12\x0e.service.State\x1a\x0e.service.Stateb\x06proto3'
+  serialized_pb=b'\n\x0cindigo.proto\x12\x07service\"\x8e\x01\n\x05State\x12\r\n\x05\x64\x65lay\x18\x01 \x01(\x02\x12\x15\n\rdelivery_rate\x18\x02 \x01(\x02\x12\x11\n\tsend_rate\x18\x03 \x01(\x02\x12\x0c\n\x04\x63wnd\x18\x04 \x01(\x02\x12\x0c\n\x04port\x18\x05 \x01(\x05\x12\x10\n\x08\x61vg_cwnd\x18\x06 \x01(\x02\x12\x10\n\x08variance\x18\x07 \x01(\x02\x12\x0c\n\x04nums\x18\x08 \x03(\x05\"\x18\n\x06\x41\x63tion\x12\x0e\n\x06\x61\x63tion\x18\x01 \x01(\x02\"\x07\n\x05\x45mpty2v\n\x0b\x61\x63\x65rService\x12\x37\n\x14GetExplorationAction\x12\x0e.service.State\x1a\x0f.service.Action\x12.\n\x0cUpdateMetric\x12\x0e.service.State\x1a\x0e.service.Stateb\x06proto3'
 )
 
 
@@ -68,6 +68,27 @@ _STATE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='avg_cwnd', full_name='service.State.avg_cwnd', index=5,
+      number=6, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='variance', full_name='service.State.variance', index=6,
+      number=7, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='nums', full_name='service.State.nums', index=7,
+      number=8, type=5, cpp_type=1, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -80,8 +101,8 @@ _STATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=25,
-  serialized_end=117,
+  serialized_start=26,
+  serialized_end=168,
 )
 
 
@@ -112,8 +133,8 @@ _ACTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=119,
-  serialized_end=143,
+  serialized_start=170,
+  serialized_end=194,
 )
 
 
@@ -137,8 +158,8 @@ _EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=145,
-  serialized_end=152,
+  serialized_start=196,
+  serialized_end=203,
 )
 
 DESCRIPTOR.message_types_by_name['State'] = _STATE
@@ -176,8 +197,8 @@ _ACERSERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=154,
-  serialized_end=272,
+  serialized_start=205,
+  serialized_end=323,
   methods=[
   _descriptor.MethodDescriptor(
     name='GetExplorationAction',
