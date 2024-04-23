@@ -96,7 +96,7 @@ class A3C(object):
                 worker_device=self.worker_device,
                 cluster=self.cluster)):
             with tf.variable_scope('global'):
-                self.global_network = ActorCriticNetwork(
+                self.global_network = ActorCriticLSTM(
                     state_dim=self.state_dim, action_cnt=self.action_cnt)
                 self.global_step = tf.get_variable(
                     'global_step', [], tf.int32,
@@ -105,7 +105,7 @@ class A3C(object):
 
         with tf.device(self.worker_device):
             with tf.variable_scope('local'):
-                self.local_network = ActorCriticNetwork(
+                self.local_network = ActorCriticLSTM(
                     state_dim=self.state_dim, action_cnt=self.action_cnt)
 
             self.build_loss()

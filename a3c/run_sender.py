@@ -13,7 +13,7 @@ from a3c import ewma
 class Learner(object):
     def __init__(self, state_dim, action_cnt, restore_vars):
         with tf.variable_scope('local'):
-            self.pi = ActorCriticNetwork(
+            self.pi = ActorCriticLSTM(
                 state_dim=state_dim, action_cnt=action_cnt)
             # # save the current LSTM state of local network
             # self.lstm_state = self.pi.lstm_state_init

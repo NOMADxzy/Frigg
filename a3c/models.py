@@ -27,7 +27,7 @@ class ActorCriticLSTM(object):
         self.indices = tf.placeholder(tf.int32, [None])
         rnn_in = tf.expand_dims(self.states, [0])  # shape=(1, ?, state_dim)
 
-        lstm_layers = 2
+        lstm_layers = 1
         lstm_state_dim = 256
         lstm_cell_list = []
         for i in xrange(lstm_layers):
