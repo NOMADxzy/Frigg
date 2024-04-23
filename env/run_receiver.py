@@ -35,7 +35,7 @@ def main():
     args = parser.parse_args()
 
     receivers = []
-    for i in range(0, 5):
+    for i in range(0, 3):
         receiver = Receiver(args.ip, args.port + i)
         receivers.append(receiver)
 

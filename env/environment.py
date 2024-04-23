@@ -18,7 +18,7 @@ class Environment(object):  # 训练环境
         self.action_cnt = Sender.action_cnt
 
         # variables below will be filled in during setup
-        self.flows = 5
+        self.flows = 3
         self.senders = []
         self.receivers = None
 

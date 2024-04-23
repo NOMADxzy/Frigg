@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 import datetime
 from os import path
-from models import ActorCriticLSTM
+from models import ActorCriticLSTM,ActorCriticNetwork
 from helpers.helpers import make_sure_path_exists
 
 
@@ -96,7 +96,7 @@ class A3C(object):
                 worker_device=self.worker_device,
                 cluster=self.cluster)):
             with tf.variable_scope('global'):
-                self.global_network = ActorCriticLSTM(
+                self.global_network = ActorCriticNetwork(
                     state_dim=self.state_dim, action_cnt=self.action_cnt)
                 self.global_step = tf.get_variable(
                     'global_step', [], tf.int32,
@@ -105,7 +105,7 @@ class A3C(object):
 
         with tf.device(self.worker_device):
             with tf.variable_scope('local'):
-                self.local_network = ActorCriticLSTM(
+                self.local_network = ActorCriticNetwork(
                     state_dim=self.state_dim, action_cnt=self.action_cnt)
 
             self.build_loss()

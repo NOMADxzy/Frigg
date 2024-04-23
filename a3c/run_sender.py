@@ -6,14 +6,14 @@ import numpy as np
 import tensorflow as tf
 from os import path
 from env.sender import Sender
-from models import ActorCriticLSTM
+from models import ActorCriticLSTM,ActorCriticNetwork
 from a3c import ewma
 
 
 class Learner(object):
     def __init__(self, state_dim, action_cnt, restore_vars):
         with tf.variable_scope('local'):
-            self.pi = ActorCriticLSTM(
+            self.pi = ActorCriticNetwork(
                 state_dim=state_dim, action_cnt=action_cnt)
             # # save the current LSTM state of local network
             # self.lstm_state = self.pi.lstm_state_init
