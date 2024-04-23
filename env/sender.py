@@ -225,7 +225,7 @@ class Sender(object):
                                      port=self.port))
                 assert self.port == input_state.port
                 state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd, input_state.avg_cwnd, input_state.variance]
-                action = self.sample_action(state)
+                action = self.sample_action(state[:self.state_dim])
                 self.take_action(action)
             else:
                 start_time = time.time()
@@ -309,6 +309,7 @@ class Sender(object):
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
         print(tput)
+        print self.rtt_buf
         print(perc_delay)
         print loss_rate
         return 10*tput - perc_delay - 1000*loss_rate
