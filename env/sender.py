@@ -309,9 +309,10 @@ class Sender(object):
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
         print(tput)
+        print perc_delay
         # print self.rtt_buf
-        print loss_rate
-        return 10*tput - perc_delay/10 - 1000*loss_rate
+        # print loss_rate
+        return 10*tput - perc_delay - 1000*loss_rate
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))
