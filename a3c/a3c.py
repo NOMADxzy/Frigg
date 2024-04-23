@@ -322,7 +322,7 @@ class A3C(object):
             self.rollout()
 
             # train using the rollout
-            summarize = self.is_chief and self.local_step % 10 == 0
+            summarize = self.is_chief and self.local_step % 2 == 0
  
 
             if summarize:
