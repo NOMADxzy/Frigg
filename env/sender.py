@@ -87,6 +87,8 @@ class Sender(object):
             self.ts_first = None
             self.rtt_buf = []
 
+        self.handshaked = False
+
     def cleanup(self):
         if self.debug and self.sampling_file:
             self.sampling_file.close()
@@ -106,6 +108,7 @@ class Sender(object):
                 break
 
         self.sock.setblocking(0)  # non-blocking UDP socket
+        self.handshaked = True
 
     def set_sample_action(self, sample_action):
         """Set the policy. Must be called before run()."""
@@ -268,6 +271,8 @@ class Sender(object):
         return k
 
     def run(self):
+        while not self.handshaked:
+            time.sleep(1)
         TIMEOUT = 1000  # ms
         sys.stderr.write("start run sender " + str(self.port) + "\n")
 
