@@ -82,7 +82,7 @@ def multi_main():
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
     senders = []
-    executor = futures.ThreadPoolExecutor(max_workers=10)
+    executor = futures.ThreadPoolExecutor(max_workers=args.flows)
     for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
         sender = Sender(port, train=False)
