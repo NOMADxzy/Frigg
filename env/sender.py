@@ -96,6 +96,8 @@ class Sender(object):
         if self.debug and self.sampling_file:
             self.sampling_file.close()
         self.sock.close()
+
+    def output_metric(self):
         print "回收资源 并 导出数据 port:{} lines:".format(self.port, len(self.metric_data))
         # 数据导出
         with open(self.metric_file, 'w') as f:
@@ -285,7 +287,6 @@ class Sender(object):
         r = -1
 
         while self.running:
-            print self.step_cnt
             # print("while self.running")
             if self.window_is_open():
                 if curr_flags != ALL_FLAGS:
@@ -313,6 +314,8 @@ class Sender(object):
                 if flag & WRITE_FLAGS:
                     if self.window_is_open():
                         self.send()
+            if self.step_cnt == 1000:
+                self.output_metric()
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate):  # 计算奖励
