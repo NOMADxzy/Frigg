@@ -82,15 +82,15 @@ def multi_main():
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
     senders = []
+    executor = futures.ThreadPoolExecutor(max_workers=10)
     for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
         sender = Sender(port, train=False)
         # sender.set_sample_action(self.sample_action)
         senders.append(sender)
-        sender.handshake()
+        executor.submit(sender.handshake, )
 
     rewards = 0
-    executor = futures.ThreadPoolExecutor(max_workers=5)
     fus = []
     for sender in senders:
         sys.stderr.write("submit sender " + str(sender.port) + "\n")
