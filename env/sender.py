@@ -23,13 +23,13 @@ def format_actions(action_list):
     the values are lists ['op', val], such as ['+', '2.0'].
     """
     return {idx: [action[0], float(action[1:])]
-                  for idx, action in enumerate(action_list)}
+            for idx, action in enumerate(action_list)}
 
 
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
-    state_dim = 4 # TODO 更改维度
+    state_dim = 4  # TODO 更改维度
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
@@ -96,6 +96,7 @@ class Sender(object):
         if self.debug and self.sampling_file:
             self.sampling_file.close()
         self.sock.close()
+        print "回收资源 并 导出数据 port:{} lines:".format(self.port, len(self.metric_data))
         # 数据导出
         with open(self.metric_file, 'w') as f:
             for line in self.metric_data:
@@ -154,7 +155,7 @@ class Sender(object):
             self.delivery_rate_ewma = delivery_rate
         else:
             self.delivery_rate_ewma = (
-                0.875 * self.delivery_rate_ewma + 0.125 * delivery_rate)
+                    0.875 * self.delivery_rate_ewma + 0.125 * delivery_rate)
 
         # Update Vegas sending rate
         send_rate = 0.008 * (self.sent_bytes - ack.sent_bytes) / max(1, rtt)
@@ -163,7 +164,7 @@ class Sender(object):
             self.send_rate_ewma = send_rate
         else:
             self.send_rate_ewma = (
-                0.875 * self.send_rate_ewma + 0.125 * send_rate)
+                    0.875 * self.send_rate_ewma + 0.125 * send_rate)
 
     def take_action(self, action_idx):
         old_cwnd = self.cwnd
@@ -177,7 +178,6 @@ class Sender(object):
 
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
-
 
     def send(self):
         data = datagram_pb2.Data()
@@ -196,7 +196,7 @@ class Sender(object):
 
     def recv(self):
         serialized_ack, addr = self.sock.recvfrom(1600)
-        k=-1
+        k = -1
 
         if addr != self.peer_addr:
             return
@@ -219,7 +219,6 @@ class Sender(object):
                      self.send_rate_ewma,
                      self.cwnd]
 
-
             # time how long it takes to get an action from the NN
             if self.debug:
                 start_sample = time.time()
@@ -231,7 +230,8 @@ class Sender(object):
             self.metric_data.append(new_line)
 
             if self.train:
-                input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
+                input_state = self.stub.UpdateMetric(
+                    indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port))
                 assert self.port == input_state.port
                 state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
@@ -246,7 +246,6 @@ class Sender(object):
                     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port)).action
 
-
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 infer_time_file = "./infer_time.txt"
@@ -255,10 +254,8 @@ class Sender(object):
                         f.write(str(elapsed_time))
                 self.set_cwnd(cwnd_val)
 
-
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))
-
 
             self.delay_ewma = None
             self.delivery_rate_ewma = None
@@ -274,7 +271,7 @@ class Sender(object):
                     self.step_cnt = 0
                     self.running = False
 
-                    k=self.compute_performance(loss_rate)
+                    k = self.compute_performance(loss_rate)
         return k
 
     def run(self):
@@ -288,7 +285,7 @@ class Sender(object):
         r = -1
 
         while self.running:
-            #print("while self.running")
+            # print("while self.running")
             if self.window_is_open():
                 if curr_flags != ALL_FLAGS:
                     self.poller.modify(self.sock, ALL_FLAGS)
@@ -315,9 +312,9 @@ class Sender(object):
                 if flag & WRITE_FLAGS:
                     if self.window_is_open():
                         self.send()
-        return r # 返回最后一刻的奖励
+        return r  # 返回最后一刻的奖励
 
-    def compute_performance(self, loss_rate): # 计算奖励
+    def compute_performance(self, loss_rate):  # 计算奖励
         print("****************IN COMPUTE_PERFORMANCE*********************")
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
@@ -326,7 +323,7 @@ class Sender(object):
         print perc_delay
         # print self.rtt_buf
         print loss_rate
-        return 10*tput - perc_delay - 1000*loss_rate
+        return 10 * tput - perc_delay - 1000 * loss_rate
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))
