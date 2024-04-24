@@ -315,7 +315,8 @@ class Sender(object):
                     if self.window_is_open():
                         self.send()
             if self.step_cnt == 1000:
-                self.output_metric()
+                # self.output_metric()
+                print "__________\n"
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate):  # 计算奖励
