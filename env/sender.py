@@ -180,8 +180,8 @@ class Sender(object):
         self.cwnd = max(2.0, cwnd)
 
     def window_is_open(self):
-        sys.stderr.write(str(len(self.metric_data)))
-        if len(self.metric_data) == 100:
+        sys.stderr.write(str(len(self.metric_data))+"\n")
+        if len(self.metric_data) == 50:
             self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
