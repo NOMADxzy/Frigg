@@ -82,7 +82,7 @@ def multi_main():
     port0 = 10001
     for port in range(port0, port0 + flows):
         # start sender as an instance of Sender class
-        sender = Sender(port, train=True)
+        sender = Sender(port, train=False)
         # sender.set_sample_action(self.sample_action)
         senders.append(sender)
         sender.handshake()
