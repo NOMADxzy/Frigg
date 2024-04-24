@@ -92,7 +92,6 @@ def multi_main():
     fus = []
     for sender in senders:
         sys.stderr.write("submit sender " + str(sender.port) + "\n")
-        sender.handshake()
         future = executor.submit(sender.run, )
         fus.append(future)
     for fu in fus:
