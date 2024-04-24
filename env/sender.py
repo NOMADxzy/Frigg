@@ -43,7 +43,7 @@ class Sender(object):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind(('0.0.0.0', port))
+        self.sock.bind(('10.64.0.1', port))
         sys.stderr.write('[sender] Listening on port %s\n' %
                          self.sock.getsockname()[1])
 
@@ -61,7 +61,7 @@ class Sender(object):
         self.cwnd = 10.0
         self.step_len_ms = 10
 
-        channel = grpc.insecure_channel('10.64.0.3:50053')
+        channel = grpc.insecure_channel('localhost:50053')
         self.stub = indigo_pb2_grpc.acerServiceStub(channel)
 
         # state variables for RLCC
