@@ -29,14 +29,14 @@ def run_receiver(receiver):
 
 
 def main():
-    flows = 5
     parser = argparse.ArgumentParser()
     parser.add_argument('ip', metavar='IP')
     parser.add_argument('port', type=int)
+    parser.add_argument('flows', type=int)
     args = parser.parse_args()
 
     receivers = []
-    for i in range(0, flows):
+    for i in range(0, args.flows):
         receiver = Receiver(args.ip, args.port + i)
         receivers.append(receiver)
 

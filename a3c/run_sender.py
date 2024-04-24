@@ -77,10 +77,12 @@ def main():
         sender.cleanup()
 
 def multi_main():
-    flows = 5
+    parser = argparse.ArgumentParser()
+    parser.add_argument('port', type=int)
+    parser.add_argument('flows', type=int)
+    args = parser.parse_args()
     senders = []
-    port0 = 10001
-    for port in range(port0, port0 + flows):
+    for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
         sender = Sender(port, train=False)
         # sender.set_sample_action(self.sample_action)
@@ -96,7 +98,7 @@ def multi_main():
         fus.append(future)
     for fu in fus:
         rewards += fu.result()
-    return rewards / flows
+    return rewards / args.flows
 
 if __name__ == '__main__':
     # main()
