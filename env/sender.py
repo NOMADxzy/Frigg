@@ -179,6 +179,8 @@ class Sender(object):
         self.cwnd = max(2.0, cwnd)
 
     def window_is_open(self):
+        if len(self.metric_data) == 100:
+            self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
     def send(self):
@@ -314,9 +316,6 @@ class Sender(object):
                 if flag & WRITE_FLAGS:
                     if self.window_is_open():
                         self.send()
-            # if self.step_cnt == 1000:
-                # self.output_metric()
-                # print "__________\n"
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate):  # 计算奖励
