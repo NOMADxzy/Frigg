@@ -98,7 +98,8 @@ class Sender(object):
         self.sock.close()
 
     def output_metric(self):
-        print "回收资源 并 导出数据 port:{} lines:".format(self.port, len(self.metric_data))
+        sys.stderr.write(
+            "回收资源 并 导出数据 port:{} lines:\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
             for line in self.metric_data:
@@ -179,7 +180,6 @@ class Sender(object):
         self.cwnd = max(2.0, cwnd)
 
     def window_is_open(self):
-        print len(self.metric_data)
         if len(self.metric_data) == 100:
             self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
