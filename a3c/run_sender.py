@@ -8,6 +8,8 @@ from os import path
 from env.sender import Sender
 from models import ActorCriticLSTM,ActorCriticNetwork
 from a3c import ewma
+import socket,sys
+from concurrent import futures
 
 
 class Learner(object):
@@ -50,7 +52,6 @@ class Learner(object):
         # self.lstm_state = lstm_state_out
         return action
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int)
@@ -75,6 +76,29 @@ def main():
     finally:
         sender.cleanup()
 
+def multi_main():
+    flows = 5
+    senders = []
+    port0 = 10001
+    for port in range(port0, port0 + flows):
+        # start sender as an instance of Sender class
+        sender = Sender(port, train=True)
+        # sender.set_sample_action(self.sample_action)
+        senders.append(sender)
+        sender.handshake()
+
+    rewards = 0
+    executor = futures.ThreadPoolExecutor(max_workers=5)
+    fus = []
+    for sender in senders:
+        sys.stderr.write("submit sender " + str(sender.port) + "\n")
+        sender.handshake()
+        future = executor.submit(sender.run, )
+        fus.append(future)
+    for fu in fus:
+        rewards += fu.result()
+    return rewards / flows
 
 if __name__ == '__main__':
-    main()
+    # main()
+    multi_main()
