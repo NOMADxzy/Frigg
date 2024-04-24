@@ -285,6 +285,7 @@ class Sender(object):
         r = -1
 
         while self.running:
+            print self.step_cnt
             # print("while self.running")
             if self.window_is_open():
                 if curr_flags != ALL_FLAGS:
@@ -312,7 +313,6 @@ class Sender(object):
                 if flag & WRITE_FLAGS:
                     if self.window_is_open():
                         self.send()
-        self.cleanup()
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate):  # 计算奖励
