@@ -41,7 +41,7 @@ def main():
         receivers.append(receiver)
 
     try:
-        executor = futures.ThreadPoolExecutor(max_workers=5)
+        executor = futures.ThreadPoolExecutor(max_workers=args.flows)
         fus = []
         for receiver in receivers:
             fus.append(executor.submit(run_receiver, receiver))
