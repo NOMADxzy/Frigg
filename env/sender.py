@@ -248,10 +248,11 @@ class Sender(object):
             else:
                 start_time = time.time()
                 # 要计时的代码
-                cwnd_val = self.stub.GetExplorationAction(
-                    indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
-                                     port=self.port)).action
+                # cwnd_val = self.stub.GetExplorationAction(
+                #     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
+                #                      port=self.port)).action
 
+                cwnd_val = 5
                 end_time = time.time()
                 elapsed_time = end_time - start_time
                 infer_time_file = "./infer_time.txt"
