@@ -98,6 +98,8 @@ def multi_main():
         fus.append(future)
     for fu in fus:
         rewards += fu.result()
+    for sender in senders:
+        sender.cleanup()
     return rewards / args.flows
 
 if __name__ == '__main__':

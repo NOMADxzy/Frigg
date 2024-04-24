@@ -88,11 +88,19 @@ class Sender(object):
             self.rtt_buf = []
 
         self.handshaked = False
+        self.metric_data = []
+        self.metric_file = os.path.join("results", "data{}.csv".format(self.port))
 
     def cleanup(self):
+        # 回收资源
         if self.debug and self.sampling_file:
             self.sampling_file.close()
         self.sock.close()
+        # 数据导出
+        with open(self.metric_file, 'w') as f:
+            for line in self.metric_data:
+                # 将数据点转换为逗号分隔的字符串，然后写入文件
+                f.write(','.join(map(str, line)) + '\n')
 
     def handshake(self):
         """Handshake with peer receiver. Must be called before run()."""
@@ -170,6 +178,7 @@ class Sender(object):
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
 
+
     def send(self):
         data = datagram_pb2.Data()
         data.seq_num = self.seq_num
@@ -215,15 +224,13 @@ class Sender(object):
             if self.debug:
                 start_sample = time.time()
 
-            if self.train:
-                # 统计
-                new_line = copy.deepcopy(state)
-                new_line.append(loss_rate)
-                new_line.append(ack.seq_num)
-                with open('data.csv', 'a') as f:
-                    # 将数据点转换为逗号分隔的字符串，然后写入文件
-                    f.write(','.join(map(str, new_line)) + '\n')
+            # 统计
+            new_line = copy.deepcopy(state)
+            new_line.append(loss_rate)
+            new_line.append(ack.seq_num)
+            self.metric_data.append(new_line)
 
+            if self.train:
                 input_state = self.stub.UpdateMetric(indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port))
                 assert self.port == input_state.port
@@ -319,7 +326,7 @@ class Sender(object):
         print perc_delay
         # print self.rtt_buf
         print loss_rate
-        return 10*tput - perc_delay/6 - 1000*loss_rate
+        return 10*tput - perc_delay - 1000*loss_rate
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))
