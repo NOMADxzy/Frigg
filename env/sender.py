@@ -61,7 +61,7 @@ class Sender(object):
         self.cwnd = 10.0
         self.step_len_ms = 10
 
-        channel = grpc.insecure_channel('localhost:50053')
+        channel = grpc.insecure_channel('10.64.0.3:50053')
         self.stub = indigo_pb2_grpc.acerServiceStub(channel)
 
         # state variables for RLCC
