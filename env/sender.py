@@ -359,7 +359,8 @@ class Sender(object):
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
             useage = np.mean(self.usage_list)
-            return 10 * (useage - 0.9) - perc_delay/50 - 1000 * loss_rate
+            reward = 10 * (useage - 0.9) - perc_delay/20 - 1000 * loss_rate
+            return reward
         return useage
         # return reward
 
