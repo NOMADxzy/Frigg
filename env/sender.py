@@ -111,7 +111,8 @@ class Sender(object):
             "回收资源 并 导出数据 port:{} lines:\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
-            title = ['delay','delivery_rate','send_rate','cwnd','loss_rate','seq_num','reward','infer_time']
+            title = ['delay','delivery_rate','send_rate','cwnd','loss_rate','seq_num','reward','infer_time',
+                     'distribution']
             f.write(','.join(map(str, title)) + '\n')
             for line in self.metric_data:
                 # 将数据点转换为逗号分隔的字符串，然后写入文件
@@ -274,11 +275,13 @@ class Sender(object):
                 self.take_action(action)
 
             # 统计
+            rwd, distribution = self.compute_performance(loss_rate)
             new_line = copy.deepcopy(state)  # 状态信息
             new_line.append(loss_rate)  # 丢包率
             new_line.append(ack.seq_num)  # 序列号
-            new_line.append(self.compute_performance(loss_rate, last_step=False))  # 奖励
+            new_line.append(rwd)  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
+            new_line.append(str(distribution))
             self.metric_data.append(new_line)
 
             if self.debug:
@@ -298,7 +301,7 @@ class Sender(object):
                     self.step_cnt = 0
                     self.running = False
 
-                    k = self.compute_performance(loss_rate)
+                    k = self.compute_performance(loss_rate, last_step=True)
         return k
 
     def run(self):
@@ -341,7 +344,7 @@ class Sender(object):
                         self.send()
         return r  # 返回最后一刻的奖励
 
-    def compute_performance(self, loss_rate, last_step=True):  # 计算奖励
+    def compute_performance(self, loss_rate, last_step=False):  # 计算奖励
 
         # 方法一
         # reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
@@ -360,7 +363,7 @@ class Sender(object):
             useage = np.mean(self.usage_list)
             reward = 10 * (useage - 0.8) - perc_delay/20 - 1000 * loss_rate
             return reward
-        return useage
+        return useage, self.global_state.distributions
         # return reward
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
