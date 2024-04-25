@@ -108,7 +108,7 @@ class Sender(object):
 
     def output_metric(self):
         sys.stderr.write(
-            "回收资源 并 导出数据 port:{} lines:\n".format(self.port, len(self.metric_data)))
+            "回收资源 并 导出数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
             title = ['delay','delivery_rate','send_rate','cwnd','loss_rate','seq_num','reward','infer_time',
@@ -361,7 +361,9 @@ class Sender(object):
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
             useage = np.mean(self.usage_list)
-            reward = 10 * (useage - 0.8) - perc_delay/20 - 1000 * loss_rate
+            reward = 10 * (useage - 0.8) - perc_delay/10 - 1000 * loss_rate
+            if perc_delay>100:
+                reward = -10
             return reward
         return useage, self.global_state.cwnd_distributions
         # return reward
