@@ -244,7 +244,7 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
-            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 100 == 0)
+            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 20 == 0)
 
             start_time = time.time()
             # 要计时的代码
@@ -277,7 +277,7 @@ class Sender(object):
             new_line = copy.deepcopy(state)  # 状态信息
             new_line.append(loss_rate)  # 丢包率
             new_line.append(ack.seq_num)  # 序列号
-            new_line.append(self.compute_performance(loss_rate))  # 奖励
+            new_line.append(self.compute_performance(loss_rate, debug=False))  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
             self.metric_data.append(new_line)
 
@@ -341,16 +341,17 @@ class Sender(object):
                         self.send()
         return r  # 返回最后一刻的奖励
 
-    def compute_performance(self, loss_rate):  # 计算奖励
-        if self.train:
+    def compute_performance(self, loss_rate, debug=True):  # 计算奖励
+        if debug:
             print("****************IN COMPUTE_PERFORMANCE*********************")
 
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
 
-        reward = 10 * tput - perc_delay - 1000 * loss_rate  # 奖励
-        print [tput, perc_delay, loss_rate, reward]
+        reward = tput - perc_delay/10 - 1000 * loss_rate  # 奖励
+        if debug:
+            print [tput, perc_delay, loss_rate, reward]
 
         return reward
 
