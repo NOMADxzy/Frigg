@@ -244,7 +244,7 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
-            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
+            # self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
 
             start_time = time.time()
             # 要计时的代码
