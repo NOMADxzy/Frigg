@@ -99,6 +99,7 @@ class Sender(object):
         self.metric_file = os.path.join("results", "data{}.csv".format(self.port))
         self.infer_time = []
         self.global_state = global_state
+        self.usage_list = []
 
     def cleanup(self):
         # 回收资源
@@ -342,9 +343,6 @@ class Sender(object):
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate, debug=True):  # 计算奖励
-        if debug:
-            print("****************IN COMPUTE_PERFORMANCE*********************")
-
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
@@ -354,10 +352,13 @@ class Sender(object):
         # print [tput, perc_delay, loss_rate, reward]
 
         # 方法二
-        useage = self.global_state.delivery_rate / 30
+        useage = self.global_state.delivery_rate / 30  # 固定值
+        self.usage_list.append(useage)
         if debug:
-            print "total delivery_rate: " + str(self.global_state.delivery_rate)
-            print "total usage: " + str(useage)
+            print("****************IN COMPUTE_PERFORMANCE*********************\n")
+            print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
+            print "total usage: " + str(useage) + "\n"
+            useage = np.mean(self.usage_list)
         return useage
         # return reward
 
