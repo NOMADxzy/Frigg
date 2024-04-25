@@ -342,8 +342,8 @@ class Sender(object):
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate, last_step=True):  # 计算奖励
-        duration = curr_ts_ms() - self.ts_first
-        tput = 0.008 * self.delivered / duration
+        # duration = curr_ts_ms() - self.ts_first
+        # tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
 
         # 方法一
