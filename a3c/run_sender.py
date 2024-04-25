@@ -95,10 +95,12 @@ def multi_main():
 
     for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
-        sender = Sender(port, train=False, global_state=global_state)
+        sender = Sender(port, train=True, global_state=global_state)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
-        executor.submit(sender.handshake, )
+
+    for sender in senders:
+        sender.handshake()
 
     rewards = 0
     fus = []
