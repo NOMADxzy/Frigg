@@ -263,15 +263,15 @@ class Sender(object):
                 # cwnd_val = self.stub.GetExplorationAction(
                 #     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                 #                      port=self.port)).action
-                cwnd_val = 5
-                self.set_cwnd(cwnd_val)
+                # cwnd_val = 5
+                # self.set_cwnd(cwnd_val)
 
-                # if not self.global_state is None:
-                #     input_state = self.global_state.get_input_state(cur_state)
-                #     action = self.sample_action(input_state[:self.state_dim])
-                # else:
-                #     action = self.sample_action(state[:self.state_dim])
-                # self.take_action(action)
+                if not self.global_state is None:
+                    input_state = self.global_state.get_input_state(cur_state)
+                    action = self.sample_action(input_state[:self.state_dim])
+                else:
+                    action = self.sample_action(state[:self.state_dim])
+                self.take_action(action)
 
             # 统计
             new_line = copy.deepcopy(state)  # 状态信息
