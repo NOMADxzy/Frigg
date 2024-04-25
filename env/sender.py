@@ -16,6 +16,7 @@ import indigo_pb2_grpc, grpc, indigo_pb2
 import copy
 
 MIN_CWND = 1.0
+MAX_CWND = 40.0
 
 
 def format_actions(action_list):
@@ -184,7 +185,7 @@ class Sender(object):
         op, val = self.action_mapping[action_idx]
 
         self.cwnd = apply_op(op, self.cwnd, val)
-        self.cwnd = max(MIN_CWND, self.cwnd)
+        self.cwnd = min(max(MIN_CWND, self.cwnd), MAX_CWND)
 
     def set_cwnd(self, cwnd):
         self.cwnd = max(MIN_CWND, cwnd)
@@ -243,7 +244,7 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
-            self.global_state.UpdateMetric(cur_state)
+            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 100 == 0)
 
             start_time = time.time()
             # 要计时的代码
