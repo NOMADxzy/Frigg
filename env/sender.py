@@ -278,7 +278,7 @@ class Sender(object):
             new_line = copy.deepcopy(state)  # 状态信息
             new_line.append(loss_rate)  # 丢包率
             new_line.append(ack.seq_num)  # 序列号
-            new_line.append(self.compute_performance(loss_rate, debug=False))  # 奖励
+            new_line.append(self.compute_performance(loss_rate, last_step=False))  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
             self.metric_data.append(new_line)
 
@@ -342,7 +342,7 @@ class Sender(object):
                         self.send()
         return r  # 返回最后一刻的奖励
 
-    def compute_performance(self, loss_rate, debug=True):  # 计算奖励
+    def compute_performance(self, loss_rate, last_step=True):  # 计算奖励
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
@@ -354,11 +354,12 @@ class Sender(object):
         # 方法二
         useage = self.global_state.delivery_rate / 30  # 固定值
         self.usage_list.append(useage)
-        if debug:
+        if last_step:
             print("****************IN COMPUTE_PERFORMANCE*********************\n")
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
             useage = np.mean(self.usage_list)
+            return 10 * (useage - 0.8)
         return useage
         # return reward
 
