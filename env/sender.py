@@ -352,14 +352,14 @@ class Sender(object):
         # print [tput, perc_delay, loss_rate, reward]
 
         # 方法二
-        useage = self.global_state.delivery_rate / 30  # 固定值
+        useage = self.global_state.delivery_rate / 10  # 固定值
         self.usage_list.append(useage)
         if last_step:
             print("****************IN COMPUTE_PERFORMANCE*********************\n")
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
             useage = np.mean(self.usage_list)
-            reward = 10 * (useage - 0.9) - perc_delay/20 - 1000 * loss_rate
+            reward = 10 * (useage - 0.8) - perc_delay/20 - 1000 * loss_rate
             return reward
         return useage
         # return reward
