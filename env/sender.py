@@ -349,7 +349,7 @@ class Sender(object):
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
 
-        reward = tput - perc_delay - 1000 * loss_rate  # 奖励
+        reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
         if debug:
             print [tput, perc_delay, loss_rate, reward]
 
