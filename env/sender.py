@@ -363,7 +363,7 @@ class Sender(object):
             useage = np.mean(self.usage_list)
             reward = 10 * (useage - 0.8) - perc_delay/20 - 1000 * loss_rate
             return reward
-        return useage, self.global_state.distributions
+        return useage, self.global_state.cwnd_distributions
         # return reward
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
