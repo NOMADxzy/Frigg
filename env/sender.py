@@ -192,7 +192,7 @@ class Sender(object):
 
     def window_is_open(self):
         if len(self.metric_data) % 100 == 0:
-            # sys.stderr.write(str(len(self.metric_data)) + "\n")
+            sys.stderr.write(str(len(self.metric_data)) + "\n")
             if len(self.metric_data) == 999:
                 self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
