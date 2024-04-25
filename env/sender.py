@@ -89,9 +89,9 @@ class Sender(object):
         self.loss_rate = 0
 
         self.step_cnt = 0
-        if self.train:
-            self.ts_first = None
-            self.rtt_buf = []
+        # if self.train:
+        self.ts_first = None
+        self.rtt_buf = []
 
         self.handshaked = False
         self.metric_data = []
@@ -148,10 +148,10 @@ class Sender(object):
         rtt = float(curr_time_ms - ack.send_ts)
         self.min_rtt = min(self.min_rtt, rtt)
 
-        if self.train:
-            if self.ts_first is None:
-                self.ts_first = curr_time_ms
-            self.rtt_buf.append(rtt)
+        # if self.train:
+        if self.ts_first is None:
+            self.ts_first = curr_time_ms
+        self.rtt_buf.append(rtt)
 
         delay = rtt - self.min_rtt
         if self.delay_ewma is None:
@@ -342,9 +342,6 @@ class Sender(object):
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate, last_step=True):  # 计算奖励
-        # duration = curr_ts_ms() - self.ts_first
-        # tput = 0.008 * self.delivered / duration
-        perc_delay = np.percentile(self.rtt_buf, 95)
 
         # 方法一
         # reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
@@ -354,6 +351,9 @@ class Sender(object):
         useage = self.global_state.delivery_rate / 10  # 固定值
         self.usage_list.append(useage)
         if last_step:
+            duration = curr_ts_ms() - self.ts_first
+            tput = 0.008 * self.delivered / duration
+            perc_delay = np.percentile(self.rtt_buf, 95)
             print("****************IN COMPUTE_PERFORMANCE*********************\n")
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
