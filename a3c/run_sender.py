@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# coding=utf-8
 
 import argparse
 import project_root
@@ -84,13 +84,21 @@ def multi_main():
     parser.add_argument('port', type=int)
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
+
+    #  共享的变量
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=args.flows)
     global_state = GlobalState()
+    model_path = path.join(project_root.DIR, 'a3c', 'logs', 'checkpoint-100')
+    learner = Learner(
+        state_dim=Sender.state_dim,
+        action_cnt=Sender.action_cnt,
+        restore_vars=model_path)
+
     for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
         sender = Sender(port, train=False, global_state=global_state)
-        # sender.set_sample_action(self.sample_action)
+        sender.set_sample_action(learner.sample_action)
         senders.append(sender)
         executor.submit(sender.handshake, )
 
