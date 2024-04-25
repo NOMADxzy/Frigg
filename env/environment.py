@@ -9,6 +9,7 @@ from sender import Sender
 import project_root
 from helpers.helpers import get_open_udp_port
 from concurrent import futures
+from env.global_state import GlobalState
 
 
 class Environment(object):  # 训练环境
@@ -18,7 +19,7 @@ class Environment(object):  # 训练环境
         self.action_cnt = Sender.action_cnt
 
         # variables below will be filled in during setup
-        self.flows = 3
+        self.flows = 10
         self.senders = []
         self.receivers = None
 
@@ -34,10 +35,11 @@ class Environment(object):  # 训练环境
 
         port0 = get_open_udp_port()
         subcmds = ''
+        global_state = GlobalState()
         for port in range(port0, port0 + self.flows):
             # start sender as an instance of Sender class
             sys.stderr.write('Starting sender...\n')
-            sender = Sender(port, train=True)
+            sender = Sender(port, train=True, global_state=global_state)
             sender.set_sample_action(self.sample_action)
             self.senders.append(sender)
 
@@ -50,7 +52,7 @@ class Environment(object):  # 训练环境
 
         receiver_src = path.join(
             project_root.DIR, 'env', 'run_receiver.py')
-        recv_cmd = 'python %s $MAHIMAHI_BASE %s' % (receiver_src, port0)
+        recv_cmd = 'python %s $MAHIMAHI_BASE %s %s' % (receiver_src, port0, self.flows)
         cmd = "%s -- sh -c '%s'" % (self.mahimahi_cmd, recv_cmd)
 
         self.receivers = Popen(cmd, preexec_fn=os.setsid, shell=True)
@@ -63,7 +65,7 @@ class Environment(object):  # 训练环境
 
         sys.stderr.write('[environment.py] Obtaining an episode from environment...\n')
         rewards = 0
-        executor = futures.ThreadPoolExecutor(max_workers=5)
+        executor = futures.ThreadPoolExecutor(max_workers=self.flows)
         fus = []
         for sender in self.senders:
             sys.stderr.write("submit sender " + str(sender.port) + "\n")

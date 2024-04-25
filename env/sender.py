@@ -13,6 +13,9 @@ from helpers.helpers import (
     curr_ts_ms, apply_op,
     READ_FLAGS, ERR_FLAGS, READ_ERR_FLAGS, WRITE_FLAGS, ALL_FLAGS)
 import indigo_pb2_grpc, grpc, indigo_pb2
+import copy
+
+MIN_CWND = 1.0
 
 
 def format_actions(action_list):
@@ -25,15 +28,18 @@ def format_actions(action_list):
     return {idx: [action[0], float(action[1:])]
             for idx, action in enumerate(action_list)}
 
-
+# 统计频率(10ms、20ms、30ms)
+# QOE的factor(对时延、丢包的关注度)
+# 真实网络环境
+# 带宽利用率
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
-    state_dim = 4  # TODO 更改维度
+    state_dim = 7  # TODO 更改维度
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
-    def __init__(self, port=0, train=False, debug=False):
+    def __init__(self, port=0, train=False, debug=False, global_state=None):
         self.train = train
         self.port = port
         self.debug = debug
@@ -90,6 +96,8 @@ class Sender(object):
         self.handshaked = False
         self.metric_data = []
         self.metric_file = os.path.join("results", "data{}.csv".format(self.port))
+        self.infer_time = []
+        self.global_state = global_state
 
     def cleanup(self):
         # 回收资源
@@ -102,6 +110,8 @@ class Sender(object):
             "回收资源 并 导出数据 port:{} lines:\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
+            title = ['delay','delivery_rate','send_rate','cwnd','loss_rate','seq_num','reward','infer_time']
+            f.write(','.join(map(str, title)) + '\n')
             for line in self.metric_data:
                 # 将数据点转换为逗号分隔的字符串，然后写入文件
                 f.write(','.join(map(str, line)) + '\n')
@@ -174,15 +184,16 @@ class Sender(object):
         op, val = self.action_mapping[action_idx]
 
         self.cwnd = apply_op(op, self.cwnd, val)
-        self.cwnd = max(2.0, self.cwnd)
+        self.cwnd = max(MIN_CWND, self.cwnd)
 
     def set_cwnd(self, cwnd):
-        self.cwnd = max(2.0, cwnd)
+        self.cwnd = max(MIN_CWND, cwnd)
 
     def window_is_open(self):
-        sys.stderr.write(str(len(self.metric_data))+"\n")
-        if len(self.metric_data) == 50:
-            self.output_metric()
+        if len(self.metric_data) % 100 == 0:
+            # sys.stderr.write(str(len(self.metric_data)) + "\n")
+            if len(self.metric_data) == 999:
+                self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
     def send(self):
@@ -229,13 +240,14 @@ class Sender(object):
             if self.debug:
                 start_sample = time.time()
 
-            # 统计
-            new_line = copy.deepcopy(state)
-            new_line.append(loss_rate)
-            new_line.append(ack.seq_num)
-            self.metric_data.append(new_line)
+            # 更新状态
+            cur_state = copy.deepcopy(state)
+            cur_state.append(self.port)
+            self.global_state.UpdateMetric(cur_state)
 
-            if self.train:
+            start_time = time.time()
+            # 要计时的代码
+            if self.train and False:
                 input_state = self.stub.UpdateMetric(
                     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                                      port=self.port))
@@ -246,20 +258,27 @@ class Sender(object):
                 action = self.sample_action(state[:self.state_dim])
                 self.take_action(action)
             else:
-                start_time = time.time()
-                # 要计时的代码
+
                 # cwnd_val = self.stub.GetExplorationAction(
                 #     indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
                 #                      port=self.port)).action
+                # cwnd_val = 5
+                # self.set_cwnd(cwnd_val)
 
-                cwnd_val = 5
-                end_time = time.time()
-                elapsed_time = end_time - start_time
-                infer_time_file = "./infer_time.txt"
-                if not os.path.exists(infer_time_file):
-                    with open(infer_time_file, "w") as f:
-                        f.write(str(elapsed_time))
-                self.set_cwnd(cwnd_val)
+                if not self.global_state is None:
+                    input_state = self.global_state.get_input_state(cur_state)
+                    action = self.sample_action(input_state[:self.state_dim])
+                else:
+                    action = self.sample_action(state[:self.state_dim])
+                self.take_action(action)
+
+            # 统计
+            new_line = copy.deepcopy(state)  # 状态信息
+            new_line.append(loss_rate)  # 丢包率
+            new_line.append(ack.seq_num)  # 序列号
+            new_line.append(self.compute_performance(loss_rate))  # 奖励
+            new_line.append(time.time() - start_time)  # 推理时间
+            self.metric_data.append(new_line)
 
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))
@@ -322,15 +341,17 @@ class Sender(object):
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate):  # 计算奖励
-        print("****************IN COMPUTE_PERFORMANCE*********************")
+        if self.train:
+            print("****************IN COMPUTE_PERFORMANCE*********************")
+
         duration = curr_ts_ms() - self.ts_first
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
-        print(tput)
-        print perc_delay
-        # print self.rtt_buf
-        print loss_rate
-        return 10 * tput - perc_delay - 1000 * loss_rate
+
+        reward = 10 * tput - perc_delay - 1000 * loss_rate  # 奖励
+        print [tput, perc_delay, loss_rate, reward]
+
+        return reward
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))

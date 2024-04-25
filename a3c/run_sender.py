@@ -10,6 +10,7 @@ from models import ActorCriticLSTM,ActorCriticNetwork
 from a3c import ewma
 import socket,sys
 from concurrent import futures
+from env.global_state import GlobalState
 
 
 class Learner(object):
@@ -83,9 +84,10 @@ def multi_main():
     args = parser.parse_args()
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=args.flows)
+    global_state = GlobalState()
     for port in range(args.port, args.port + args.flows):
         # start sender as an instance of Sender class
-        sender = Sender(port, train=False)
+        sender = Sender(port, train=False, global_state=global_state)
         # sender.set_sample_action(self.sample_action)
         senders.append(sender)
         executor.submit(sender.handshake, )
