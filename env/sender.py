@@ -88,9 +88,8 @@ class Sender(object):
         self.arrive_cnt = 0
         self.loss_rate = 0
 
+        self.step_cnt = 0
         if self.train:
-            self.step_cnt = 0
-
             self.ts_first = None
             self.rtt_buf = []
 
