@@ -193,7 +193,7 @@ class Sender(object):
     def window_is_open(self):
         if len(self.metric_data) % 100 == 0:
             sys.stderr.write(str(len(self.metric_data)) + "\n")
-            if len(self.metric_data) == 600:
+            if len(self.metric_data) == 1000:
                 self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
@@ -244,7 +244,7 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
-            # self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
+            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
 
             start_time = time.time()
             # 要计时的代码

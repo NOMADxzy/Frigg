@@ -83,12 +83,12 @@ class GlobalState:
         with lock:
             self.update_states(state)
             cur_state = state[:4]
-            input_state = self.overly(cur_state)
+            # input_state = self.overly(cur_state)
 
             if debug:
-                print input_state
+                # print input_state
                 print cur_state
                 print self.cwnd_distributions
 
-            input_state.append(state[4])
-            return input_state
+            # input_state.append(state[4])
+            # return input_state
