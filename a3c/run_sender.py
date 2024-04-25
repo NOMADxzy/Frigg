@@ -1,5 +1,3 @@
-# coding=utf-8
-
 import argparse
 import project_root
 import numpy as np
@@ -85,7 +83,7 @@ def multi_main():
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
 
-    #  共享的变量
+    #  shared things
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=args.flows)
     global_state = GlobalState()
