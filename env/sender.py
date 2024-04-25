@@ -244,7 +244,7 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
-            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 20 == 0)
+            self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
 
             start_time = time.time()
             # 要计时的代码
@@ -349,11 +349,17 @@ class Sender(object):
         tput = 0.008 * self.delivered / duration
         perc_delay = np.percentile(self.rtt_buf, 95)
 
-        reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
-        if debug:
-            print [tput, perc_delay, loss_rate, reward]
+        # 方法一
+        # reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
+        # print [tput, perc_delay, loss_rate, reward]
 
-        return reward
+        # 方法二
+        useage = self.global_state.delivery_rate / 30
+        if debug:
+            print "total delivery_rate: " + str(self.global_state.delivery_rate)
+            print "total usage: " + str(useage)
+        return useage
+        # return reward
 
         with open(path.join(project_root.DIR, 'env', 'perf'), 'a', 0) as perf:
             perf.write('%.2f %d\n' % (tput, perc_delay))
