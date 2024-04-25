@@ -89,5 +89,5 @@ class GlobalState:
             print cur_state
             print self.cwnd_distributions
 
-            input_state.append(state.port)
+            input_state.append(state[4])
             return input_state
