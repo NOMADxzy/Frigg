@@ -194,9 +194,9 @@ class Sender(object):
     def window_is_open(self):
         if len(self.metric_data) % 100 == 0:
             pass
-            # sys.stderr.write(str(len(self.metric_data)) + "\n")
-            # if len(self.metric_data) == 400:
-            #     self.output_metric()
+            sys.stderr.write(str(len(self.metric_data)) + "\n")
+            if len(self.metric_data) == 400:
+                self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
     def send(self):
@@ -268,11 +268,17 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                if not self.global_state is None:
-                    input_state = self.global_state.get_input_state(cur_state)
-                    action = self.sample_action(input_state[:self.state_dim])
+                action = 2
+                if self.delay_ewma>100:
+                    action = 0
+                elif self.delay_ewma>50:
+                    action = 1
                 else:
-                    action = self.sample_action(state[:self.state_dim])
+                    if not self.global_state is None:
+                        input_state = self.global_state.get_input_state(cur_state)
+                        action = self.sample_action(input_state[:self.state_dim])
+                    else:
+                        action = self.sample_action(state[:self.state_dim])
                 self.take_action(action)
 
             # 统计

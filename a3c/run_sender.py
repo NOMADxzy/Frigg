@@ -87,7 +87,7 @@ def multi_main():
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=args.flows)
     global_state = GlobalState()
-    model_path = path.join(project_root.DIR, 'a3c', 'logs', 'checkpoint-100')
+    model_path = path.join(project_root.DIR, 'a3c', 'logs', 'checkpoint-80')
     learner = Learner(
         state_dim=Sender.state_dim,
         action_cnt=Sender.action_cnt,
