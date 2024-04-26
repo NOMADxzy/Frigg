@@ -223,9 +223,8 @@ class Sender(object):
         self.seq_num += 1
         self.sent_bytes += len(serialized_data)
         if len(self.metric_data) % 100 == 0:
-            pass
-            sys.stderr.write(str(len(self.metric_data)) + "\n")
-            if len(self.metric_data) == 400:
+            # sys.stderr.write(str(len(self.metric_data)) + "\n")
+            if len(self.metric_data) == 800:
                 self.output_metric()
 
     def recv(self):
