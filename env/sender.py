@@ -108,8 +108,8 @@ class Sender(object):
 
         self.handshaked = False
         self.metric_data = []
-        self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}.csv".
-                                        format(self.id, self.step_len_ms, self.sender_num))
+        self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv".
+                                        format(self.id, self.step_len_ms, self.sender_num,self.meter_bandwidth))
         self.infer_time = []
         self.global_state = global_state
         self.usage_list = []
@@ -303,7 +303,7 @@ class Sender(object):
             new_line.append(ack.seq_num)  # 序列号
             new_line.append(rwd)  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
-            new_line.append(str(distribution))
+            new_line.append('_'.join(map(str,distribution)))
             self.metric_data.append(new_line)
 
             if self.debug:
