@@ -274,7 +274,7 @@ class Sender(object):
             #     action = self.sample_action(state[:self.state_dim])
             #     self.take_action(action)
             if self.meter_bandwidth:
-                cwnd_val = 100
+                cwnd_val = 40
                 self.set_cwnd(cwnd_val)
             else:
 
