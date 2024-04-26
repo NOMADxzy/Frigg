@@ -192,11 +192,6 @@ class Sender(object):
         self.cwnd = max(MIN_CWND, cwnd)
 
     def window_is_open(self):
-        if len(self.metric_data) % 100 == 0:
-            pass
-            sys.stderr.write(str(len(self.metric_data)) + "\n")
-            if len(self.metric_data) == 400:
-                self.output_metric()
         return self.seq_num - self.next_ack < self.cwnd
 
     def send(self):
@@ -213,6 +208,11 @@ class Sender(object):
 
         self.seq_num += 1
         self.sent_bytes += len(serialized_data)
+        if len(self.metric_data) % 100 == 0:
+            pass
+            sys.stderr.write(str(len(self.metric_data)) + "\n")
+            if len(self.metric_data) == 400:
+                self.output_metric()
 
     def recv(self):
         serialized_ack, addr = self.sock.recvfrom(1600)
@@ -268,7 +268,6 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                action = 2
                 if self.delay_ewma>100:
                     action = 0
                 elif self.delay_ewma>50:
@@ -302,8 +301,8 @@ class Sender(object):
 
             self.step_start_ms = curr_ts_ms()
 
+            self.step_cnt += 1
             if self.train:
-                self.step_cnt += 1
                 if self.step_cnt >= Sender.max_steps:
                     self.step_cnt = 0
                     self.running = False
