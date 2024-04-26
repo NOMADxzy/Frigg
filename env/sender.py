@@ -222,10 +222,6 @@ class Sender(object):
 
         self.seq_num += 1
         self.sent_bytes += len(serialized_data)
-        if len(self.metric_data) % 100 == 0:
-            # sys.stderr.write(str(len(self.metric_data)) + "\n")
-            if len(self.metric_data) >= 100:
-                self.output_metric()
 
     def recv(self):
         serialized_ack, addr = self.sock.recvfrom(1600)
@@ -306,6 +302,11 @@ class Sender(object):
             new_line.append('_'.join(map(str,distribution)))
             self.metric_data.append(new_line)
 
+            if len(self.metric_data) % 100 == 0:
+                # sys.stderr.write(str(len(self.metric_data)) + "\n")
+                if len(self.metric_data) >= 400:
+                    self.output_metric()
+
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))
 
@@ -367,7 +368,9 @@ class Sender(object):
         return r  # 返回最后一刻的奖励
 
     def compute_performance(self, loss_rate, last_step=False):  # 计算奖励
-
+        duration = curr_ts_ms() - self.ts_first
+        tput = 0.008 * self.delivered / duration
+        perc_delay = np.percentile(self.rtt_buf, 95)
         # 方法一
         # reward = tput*4 - perc_delay - 1000 * loss_rate  # 奖励
         # print [tput, perc_delay, loss_rate, reward]
@@ -376,9 +379,6 @@ class Sender(object):
         useage = self.global_state.delivery_rate / 10  # 固定值
         self.usage_list.append(useage)
         if last_step:
-            duration = curr_ts_ms() - self.ts_first
-            tput = 0.008 * self.delivered / duration
-            perc_delay = np.percentile(self.rtt_buf, 95)
             print("****************IN COMPUTE_PERFORMANCE*********************\n")
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"

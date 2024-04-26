@@ -5,41 +5,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 import bisect
+from flow_data import FlowData
 
 
 # 读取数据 delay,delivery_rate,send_rate,cwnd,loss_rate,seq_num,reward,infer_time,distribution
 class RunData:
-    def __init__(self, data_file, ori_band_width=None, ori_seq=None):
-        self.delay = []
-        self.delivery_rate = []
-        self.send_rate = []
-        self.cwnd = []
-        self.loss_rate = []
-        self.seqs = []
-        self.reward = []
-        self.infer_time = []
-        self.distribution = []
+    def __init__(self,sender_num=5, step_len_ms=10, band_width=False, ori_band_width=None, ori_seq=None):
+        self.flow_datas = []
+        self.sum_flow_data = FlowData()
+
+        self.sender_num = sender_num
+        self.step_len_ms = step_len_ms
+        self.band_width = band_width
 
         self.useage = []
 
         self.ori_band_width = ori_band_width
         self.ori_seq = ori_seq
-        with open(os.path.join('results', data_file), 'r') as f:
-            row_id = -1
-            for line in f:
-                row_id += 1
-                if row_id == 0:
-                    continue
-                line_splits = line.strip().split(',')  # 这里假设使用逗号作为分隔符
-                self.delay.append(float(line_splits[0]))
-                self.delivery_rate.append(float(line_splits[1]))
-                self.send_rate.append(float(line_splits[2]))
-                self.cwnd.append(float(line_splits[3]))
-                self.loss_rate.append(float(line_splits[4]))
-                self.seqs.append(int(line_splits[5]))
-                self.reward.append(float(line_splits[6]))
-                self.infer_time.append(float(line_splits[7]))
-                self.distribution.append(line_splits[8])
+
+    def load_data(self):
+        template = 'data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv'
+        for i in range(self.sender_num):
+            data_file = template.format(i, self.step_len_ms, self.sender_num, self.band_width)
+            self.flow_datas.append(FlowData(data_file))
 
     def get_ori_band_width(self, seq):
         left = bisect.bisect_left(self.ori_seq, seq)
