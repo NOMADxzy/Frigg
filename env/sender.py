@@ -224,7 +224,7 @@ class Sender(object):
         self.sent_bytes += len(serialized_data)
         if len(self.metric_data) % 100 == 0:
             # sys.stderr.write(str(len(self.metric_data)) + "\n")
-            if len(self.metric_data) == 400:
+            if len(self.metric_data) >= 100:
                 self.output_metric()
 
     def recv(self):
