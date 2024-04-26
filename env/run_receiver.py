@@ -20,7 +20,7 @@ import time
 from concurrent import futures
 
 from receiver import Receiver
-import threading
+import threading, yaml
 
 
 def run_receiver(receiver):
@@ -35,13 +35,18 @@ def main():
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
 
+    #  configs
+    with open('config.yaml', 'r') as file:
+        config_data = yaml.safe_load(file)
+    flows = config_data['flows']
+
     receivers = []
-    for i in range(0, args.flows):
+    for i in range(0, flows):
         receiver = Receiver(args.ip, args.port + i)
         receivers.append(receiver)
 
     try:
-        executor = futures.ThreadPoolExecutor(max_workers=args.flows)
+        executor = futures.ThreadPoolExecutor(max_workers=flows)
         fus = []
         for receiver in receivers:
             fus.append(executor.submit(run_receiver, receiver))

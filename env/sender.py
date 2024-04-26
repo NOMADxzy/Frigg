@@ -29,10 +29,19 @@ def format_actions(action_list):
     return {idx: [action[0], float(action[1:])]
             for idx, action in enumerate(action_list)}
 
-# 统计频率(10ms、20ms、30ms)
-# QOE的factor(对时延、丢包的关注度)
-# 真实网络环境
+
+# 统计频率(10ms、20ms、30ms)  ——10
+# sender数量                 ——5
+# 是否平均场                  ——True
+# 网络环境（外部改）
+# QOE的factor(对时延、丢包的关注度)（外部改）
+# 模型结构（外部改）
+
 # 带宽利用率
+# 时延
+# 丢包
+# cwnd分布
+# QOE
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
@@ -40,10 +49,14 @@ class Sender(object):
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
-    def __init__(self, port=0, train=False, debug=False, global_state=None):
+    def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
+                 meter_bandwidth=False):
         self.train = train
         self.port = port
+        self.id = id
+        self.sender_num = sender_num
         self.debug = debug
+        self.meter_bandwidth = meter_bandwidth
 
         # UDP socket and poller
         self.peer_addr = None
@@ -66,7 +79,7 @@ class Sender(object):
         self.seq_num = 0
         self.next_ack = 0
         self.cwnd = 10.0
-        self.step_len_ms = 10
+        self.step_len_ms = step_len_ms
 
         channel = grpc.insecure_channel('localhost:50053')
         self.stub = indigo_pb2_grpc.acerServiceStub(channel)
@@ -95,7 +108,8 @@ class Sender(object):
 
         self.handshaked = False
         self.metric_data = []
-        self.metric_file = os.path.join("results", "data{}.csv".format(self.port))
+        self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}.csv".
+                                        format(self.id, self.step_len_ms, self.sender_num))
         self.infer_time = []
         self.global_state = global_state
         self.usage_list = []
@@ -111,7 +125,7 @@ class Sender(object):
             "回收资源 并 导出数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
-            title = ['delay','delivery_rate','send_rate','cwnd','loss_rate','seq_num','reward','infer_time',
+            title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'seq_num', 'reward', 'infer_time',
                      'distribution']
             f.write(','.join(map(str, title)) + '\n')
             for line in self.metric_data:
@@ -189,7 +203,7 @@ class Sender(object):
         self.cwnd = min(max(MIN_CWND, self.cwnd), MAX_CWND)
 
     def set_cwnd(self, cwnd):
-        self.cwnd = max(MIN_CWND, cwnd)
+        self.cwnd = cwnd
 
     def window_is_open(self):
         return self.seq_num - self.next_ack < self.cwnd
@@ -250,16 +264,19 @@ class Sender(object):
 
             start_time = time.time()
             # 要计时的代码
-            if self.train and False:
-                input_state = self.stub.UpdateMetric(
-                    indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
-                                     port=self.port))
-                assert self.port == input_state.port
-                state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
-                for e in input_state.nums:
-                    state.append(e)
-                action = self.sample_action(state[:self.state_dim])
-                self.take_action(action)
+            # if self.train and False:
+            #     input_state = self.stub.UpdateMetric(
+            #         indigo_pb2.State(delay=state[0], delivery_rate=state[1], send_rate=state[2], cwnd=state[3],
+            #                          port=self.port))
+            #     assert self.port == input_state.port
+            #     state = [input_state.delay, input_state.delivery_rate, input_state.send_rate, input_state.cwnd]
+            #     for e in input_state.nums:
+            #         state.append(e)
+            #     action = self.sample_action(state[:self.state_dim])
+            #     self.take_action(action)
+            if self.meter_bandwidth:
+                cwnd_val = 100
+                self.set_cwnd(cwnd_val)
             else:
 
                 # cwnd_val = self.stub.GetExplorationAction(
@@ -268,9 +285,9 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                if self.delay_ewma>100:
+                if self.delay_ewma > 100:
                     action = 0
-                elif self.delay_ewma>50:
+                elif self.delay_ewma > 50:
                     action = 1
                 else:
                     if not self.global_state is None:
@@ -367,8 +384,8 @@ class Sender(object):
             print "total delivery_rate: " + str(self.global_state.delivery_rate) + "\n"
             print "total usage: " + str(useage) + "\n"
             useage = np.mean(self.usage_list)
-            reward = 10 * (useage - 0.8) - perc_delay/10 - 1000 * loss_rate
-            if perc_delay>100:
+            reward = 10 * (useage - 0.8) - perc_delay / 10 - 1000 * loss_rate
+            if perc_delay > 100:
                 reward = -10
             return reward
         return useage, self.global_state.cwnd_distributions

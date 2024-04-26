@@ -9,6 +9,7 @@ from a3c import ewma
 import socket, sys
 from concurrent import futures
 from env.global_state import GlobalState
+import yaml
 
 
 class Learner(object):
@@ -83,19 +84,28 @@ def multi_main():
     parser.add_argument('flows', type=int)
     args = parser.parse_args()
 
+    #  configs
+    with open('config.yaml', 'r') as file:
+        config_data = yaml.safe_load(file)
+    flows = config_data['flows']
+    step_len_ms = config_data['step_len_ms']
+    meter_bandwidth = config_data['meter_bandwidth']
+    model_path = config_data['model_path']
+
     #  shared things
     senders = []
-    executor = futures.ThreadPoolExecutor(max_workers=args.flows)
+    executor = futures.ThreadPoolExecutor(max_workers=flows)
     global_state = GlobalState()
-    model_path = path.join(project_root.DIR, 'a3c', 'logs', 'checkpoint-80')
+    model_path = path.join(project_root.DIR, 'a3c', 'logs', model_path)
     learner = Learner(
         state_dim=Sender.state_dim,
         action_cnt=Sender.action_cnt,
         restore_vars=model_path)
 
-    for port in range(args.port, args.port + args.flows):
-        # start sender as an instance of Sender class
-        sender = Sender(port, train=False, global_state=global_state)
+    for i, port in enumerate(range(args.port, args.port + flows)):
+        # start sender as an instance of Sender class  sender_num, step_len_ms
+        sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
+                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 
@@ -112,7 +122,7 @@ def multi_main():
         rewards += fu.result()
     for sender in senders:
         sender.cleanup()
-    return rewards / args.flows
+    return rewards / flows
 
 
 if __name__ == '__main__':
