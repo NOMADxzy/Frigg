@@ -111,7 +111,7 @@ class Sender(object):
         self.metric_data = []
         self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv".
                                         format(self.id, self.step_len_ms, self.sender_num, self.meter_bandwidth))
-        self.global_file = self.metric_file[:-4] + "_global.csv"
+        self.global_file = self.metric_file[:-4] + "-global.csv"
         self.global_data = []
 
         self.infer_time = []
