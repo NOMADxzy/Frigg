@@ -50,7 +50,7 @@ class Sender(object):
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False, trace="", model_path=""):
+                 meter_bandwidth=False, trace="", model_name=""):
         self.sample_action = None
         self.train = train
         self.port = port
@@ -59,7 +59,7 @@ class Sender(object):
         self.debug = debug
         self.meter_bandwidth = meter_bandwidth
         self.trace = trace
-        self.model_path = model_path
+        self.model_name = model_name
 
         self.fix_window = 40
         self.run_data_tail = "-fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
@@ -116,7 +116,7 @@ class Sender(object):
         self.metric_data = []
         self.metric_file = os.path.join("results", "data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv".
                                         format(self.id, self.step_len_ms, self.sender_num,
-                                               self.trace, self.model_path, self.run_data_tail))
+                                               self.trace, self.model_name, self.run_data_tail))
         self.global_file = self.metric_file[:-4] + "&global.csv"
         self.global_data = []
 

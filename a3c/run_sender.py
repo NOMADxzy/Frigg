@@ -90,14 +90,14 @@ def multi_main():
     flows = config_data['flows']
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
-    model_path = config_data['model_path']
+    model_name = config_data['model_name']
     trace = config_data['trace']
 
     #  shared things
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=flows)
     global_state = GlobalState()
-    model_path = path.join(project_root.DIR, 'a3c', 'logs', model_path)
+    model_path = path.join(project_root.DIR, 'a3c', 'logs', model_name)
     learner = Learner(
         state_dim=Sender.state_dim,
         action_cnt=Sender.action_cnt,
@@ -106,7 +106,7 @@ def multi_main():
     for i, port in enumerate(range(args.port, args.port + flows)):
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
-                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace, model_path=model_path)
+                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace, model_name=model_name)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 
