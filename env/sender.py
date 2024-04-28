@@ -50,7 +50,7 @@ class Sender(object):
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False):
+                 meter_bandwidth=False, trace="", model_path=""):
         self.sample_action = None
         self.train = train
         self.port = port
@@ -58,6 +58,11 @@ class Sender(object):
         self.sender_num = sender_num
         self.debug = debug
         self.meter_bandwidth = meter_bandwidth
+        self.trace = trace
+        self.model_path = model_path
+
+        self.fix_window = 40
+        self.run_data_tail = "-fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
 
         # UDP socket and poller
         self.peer_addr = None
@@ -109,8 +114,9 @@ class Sender(object):
 
         self.handshaked = False
         self.metric_data = []
-        self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv".
-                                        format(self.id, self.step_len_ms, self.sender_num, self.meter_bandwidth))
+        self.metric_file = os.path.join("results", "data:{}-step_len_ms:{}-sender_num:{}-trace:{}-model_path:{}{}.csv".
+                                        format(self.id, self.step_len_ms, self.sender_num,
+                                               self.trace, self.model_path, self.run_data_tail))
         self.global_file = self.metric_file[:-4] + "-global.csv"
         self.global_data = []
 
@@ -128,13 +134,14 @@ class Sender(object):
         sys.stderr.write(
             "回收资源 并 导出数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
         # 数据导出
-        with open(self.metric_file, 'w') as f:
-            title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
-                     'distribution']
-            f.write(','.join(map(str, title)) + '\n')
-            for line in self.metric_data:
-                # 将数据点转换为逗号分隔的字符串，然后写入文件
-                f.write(','.join(map(str, line)) + '\n')
+        if not self.meter_bandwidth: # 测试带宽 不需要详细文件
+            with open(self.metric_file, 'w') as f:
+                title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
+                         'distribution']
+                f.write(','.join(map(str, title)) + '\n')
+                for line in self.metric_data:
+                    # 将数据点转换为逗号分隔的字符串，然后写入文件
+                    f.write(','.join(map(str, line)) + '\n')
         if self.id == 0:
             with open(self.global_file, 'w') as f:
                 title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
@@ -282,8 +289,7 @@ class Sender(object):
             #     action = self.sample_action(state[:self.state_dim])
             #     self.take_action(action)
             if self.meter_bandwidth:
-                cwnd_val = 40
-                self.set_cwnd(cwnd_val)
+                self.set_cwnd(self.fix_window)
             else:
 
                 # cwnd_val = self.stub.GetExplorationAction(

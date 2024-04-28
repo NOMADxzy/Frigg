@@ -1,5 +1,7 @@
 import os
 
+TPUT_RWD = 1
+DELAY_PENAL
 
 class FlowData:
     def __init__(self, data_file=None):
@@ -13,10 +15,14 @@ class FlowData:
         self.infer_time = []
         self.distribution = []
 
+        self.reward_factor = [1, 0.1, 1000]
+
         if data_file is None:
             return
+        self.data_file = data_file
 
-        with open(os.path.join('results', data_file), 'r') as f:
+    def load_data(self):
+        with open(os.path.join('results', self.data_file), 'r') as f:
             row_id = -1
             for line in f:
                 row_id += 1
@@ -32,4 +38,5 @@ class FlowData:
                 self.reward.append(float(line_splits[6]))
                 self.infer_time.append(float(line_splits[7]))
                 self.distribution.append(line_splits[8])
+
 

@@ -91,6 +91,7 @@ def multi_main():
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
     model_path = config_data['model_path']
+    trace = config_data['trace']
 
     #  shared things
     senders = []
@@ -105,7 +106,7 @@ def multi_main():
     for i, port in enumerate(range(args.port, args.port + flows)):
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
-                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth)
+                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace, model_path=model_path)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 

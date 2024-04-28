@@ -9,35 +9,44 @@ from flow_data import FlowData
 import utils
 
 
-# 读取数据 delay,delivery_rate,send_rate,cwnd,loss_rate,seq_num,reward,infer_time,distribution
+# 记录一次运行中所有流的表现情况
 class RunData:
-    def __init__(self, sender_num=5, step_len_ms=10, bandwidth=False, ori_band_width=None, ori_seq=None):
+    def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path=''):
         self.flow_datas = []
-        self.sum_flow_data = FlowData()
+        self.sum_flow_data = None
 
         self.sender_num = sender_num
         self.step_len_ms = step_len_ms
-        self.bandwidth = bandwidth
+        self.trace = trace
+        self.model_path = model_path
 
         self.useage = []
 
-        self.ori_band_width = ori_band_width
-        self.ori_seq = ori_seq
+        # 本次运行的带宽情况
+        self.ori_bandwidth = None
+        self.ori_seq = None
 
         self.load_data()
 
     def load_data(self):
-        template = 'data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv'
+        # 加载所有流表现情况
+        template = "data:{}-step_len_ms:{}-sender_num:{}-trace:{}-model_path:{}{}.csv"
         for i in range(self.sender_num):
-            data_file = template.format(i, self.step_len_ms, self.sender_num, self.bandwidth)
+            data_file = template.format(i, self.step_len_ms, self.sender_num, self.trace, self.model_path, '')
             self.flow_datas.append(FlowData(data_file))
             if i == 0:
                 self.sum_flow_data = FlowData(data_file[:-4] + '-global.csv')
 
+        # 加载实时带宽情况
+        tail = "-fix_window_{}".format(40)
+        data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)
+        bandwidth_flow_data = FlowData(data_file)
+        self.ori_seq, self.ori_bandwidth = bandwidth_flow_data.seqs, bandwidth_flow_data.delivery_rate
+
     def get_ori_band_width(self, seq):
         left = bisect.bisect_left(self.ori_seq, seq)
-        bw = self.ori_band_width[left]
-        bw += self.ori_band_width[left + 1]
+        bw = self.ori_bandwidth[left]
+        bw += self.ori_bandwidth[left + 1]
         bw /= 2
         return bw
 
@@ -51,16 +60,16 @@ class RunData:
 
 
 # band_data = RunData(sender_num=5, step_len_ms=10)
-data_flow5_step10 = RunData(sender_num=5, step_len_ms=10, bandwidth=True)
+data_flow5_step10_traceATT_model80 = RunData(sender_num=5, step_len_ms=10, trace='ATT-LTE-driving',
+                                             model_path='checkpoint-80')
 # data_flow1_step20 = RunData('data0-step_len_ms20-sender_num1-meter_bandwidthFalse.csv',
 #                             ori_band_width=band_data.delivery_rate, ori_seq=band_data.seqs)
-# data_flow5_step10.compute_useage()
 
-utils.draw_list(data_list=data_flow5_step10.sum_flow_data.delivery_rate)
+data_flow5_step10_traceATT_model80.compute_useage()
+
+utils.draw_list(data_list=data_flow5_step10_traceATT_model80.sum_flow_data.delivery_rate)
+utils.draw_list(data_list=data_flow5_step10_traceATT_model80.useage)
 # utils.draw_list(data_list=band_data.send_rate)
-
-
-
 
 
 # draw_list(data_list=data_flow1_step10.useage)
