@@ -292,9 +292,9 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                if self.delay_ewma > 100:
+                if self.delay_ewma > 200:
                     action = 0
-                elif self.delay_ewma > 50:
+                elif self.delay_ewma > 100:
                     action = 1
                 else:
                     if not self.global_state is None:

@@ -4,8 +4,11 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 
-def draw_list(data_list):
-    x_data = np.arange(len(data_list))
+def draw_list(data_list, x_data=None):
+    if x_data is None:
+        x_data = np.arange(len(data_list))
+    else:
+        x_data = np.array(x_data)
     y_data = np.array(data_list)
     print np.mean(data_list)
 
