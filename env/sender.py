@@ -110,7 +110,10 @@ class Sender(object):
         self.handshaked = False
         self.metric_data = []
         self.metric_file = os.path.join("results", "data{}-step_len_ms{}-sender_num{}-meter_bandwidth{}.csv".
-                                        format(self.id, self.step_len_ms, self.sender_num,self.meter_bandwidth))
+                                        format(self.id, self.step_len_ms, self.sender_num, self.meter_bandwidth))
+        self.global_file = self.metric_file[:-4] + "_global.csv"
+        self.global_data = []
+
         self.infer_time = []
         self.global_state = global_state
         self.usage_list = []
@@ -126,12 +129,19 @@ class Sender(object):
             "回收资源 并 导出数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
         # 数据导出
         with open(self.metric_file, 'w') as f:
-            title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'seq_num', 'reward', 'infer_time',
+            title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
                      'distribution']
             f.write(','.join(map(str, title)) + '\n')
             for line in self.metric_data:
                 # 将数据点转换为逗号分隔的字符串，然后写入文件
                 f.write(','.join(map(str, line)) + '\n')
+        if self.id == 0:
+            with open(self.global_file, 'w') as f:
+                title = ['ts', 'delay', 'delivery_rate', 'send_rate', 'cwnd']
+                f.write(','.join(map(str, title)) + '\n')
+                for line in self.global_data:
+                    # 将数据点转换为逗号分隔的字符串，然后写入文件
+                    f.write(','.join(map(str, line)) + '\n')
 
     def handshake(self):
         """Handshake with peer receiver. Must be called before run()."""
@@ -300,8 +310,13 @@ class Sender(object):
             new_line.append(curr_ts_ms()-self.ts_first)  # 序列号
             new_line.append(rwd)  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
-            new_line.append('_'.join(map(str,distribution)))
+            new_line.append('_'.join(map(str, distribution)))
+
             self.metric_data.append(new_line)
+            if self.id == 0: # 只需一个节点记录全局数据
+                self.global_data.append(
+                    [curr_ts_ms()-self.ts_first, self.global_state.delay, self.global_state.delivery_rate, self.global_state.send_rate,
+                     self.global_state.cwnd])
 
             if len(self.metric_data) % 100 == 0:
                 # sys.stderr.write(str(len(self.metric_data)) + "\n")
