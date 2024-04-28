@@ -131,10 +131,10 @@ class Sender(object):
         self.sock.close()
 
     def output_metric(self):
-        sys.stderr.write(
-            "回收资源 并 导出数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
         # 数据导出
         if not self.meter_bandwidth: # 测试带宽 不需要详细文件
+            sys.stderr.write(
+                "导出详细数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
             with open(self.metric_file, 'w') as f:
                 title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
                          'distribution']
@@ -143,6 +143,8 @@ class Sender(object):
                     # 将数据点转换为逗号分隔的字符串，然后写入文件
                     f.write(','.join(map(str, line)) + '\n')
         if self.id == 0:
+            sys.stderr.write(
+                "导出总体数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
             with open(self.global_file, 'w') as f:
                 title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
                      'distribution']
