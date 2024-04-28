@@ -32,3 +32,6 @@ class FlowData:
                 self.reward.append(float(line_splits[6]))
                 self.infer_time.append(float(line_splits[7]))
                 self.distribution.append(line_splits[8])
+
+    def append(self, flow_data):
+

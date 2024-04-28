@@ -51,6 +51,7 @@ class Sender(object):
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
                  meter_bandwidth=False):
+        self.sample_action = None
         self.train = train
         self.port = port
         self.id = id
@@ -296,7 +297,7 @@ class Sender(object):
             rwd, distribution = self.compute_performance(loss_rate)
             new_line = copy.deepcopy(state)  # 状态信息
             new_line.append(loss_rate)  # 丢包率
-            new_line.append(ack.seq_num)  # 序列号
+            new_line.append(curr_ts_ms()-self.ts_first)  # 序列号
             new_line.append(rwd)  # 奖励
             new_line.append(time.time() - start_time)  # 推理时间
             new_line.append('_'.join(map(str,distribution)))
