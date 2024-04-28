@@ -30,12 +30,12 @@ class RunData:
 
     def load_data(self):
         # 加载所有流表现情况
-        template = "data:{}-step_len_ms:{}-sender_num:{}-trace:{}-model_path:{}{}.csv"
+        template = "data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv"
         for i in range(self.sender_num):
             data_file = template.format(i, self.step_len_ms, self.sender_num, self.trace, self.model_path, '')
             self.flow_datas.append(FlowData(data_file))
             if i == 0:
-                self.sum_flow_data = FlowData(data_file[:-4] + '-global.csv')
+                self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv')
 
         # 加载实时带宽情况
         tail = "-fix_window_{}".format(40)

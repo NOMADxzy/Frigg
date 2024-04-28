@@ -114,10 +114,10 @@ class Sender(object):
 
         self.handshaked = False
         self.metric_data = []
-        self.metric_file = os.path.join("results", "data:{}-step_len_ms:{}-sender_num:{}-trace:{}-model_path:{}{}.csv".
+        self.metric_file = os.path.join("results", "data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv".
                                         format(self.id, self.step_len_ms, self.sender_num,
                                                self.trace, self.model_path, self.run_data_tail))
-        self.global_file = self.metric_file[:-4] + "-global.csv"
+        self.global_file = self.metric_file[:-4] + "&global.csv"
         self.global_data = []
 
         self.infer_time = []
