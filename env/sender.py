@@ -137,7 +137,8 @@ class Sender(object):
                 f.write(','.join(map(str, line)) + '\n')
         if self.id == 0:
             with open(self.global_file, 'w') as f:
-                title = ['ts', 'delay', 'delivery_rate', 'send_rate', 'cwnd']
+                title = ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
+                     'distribution']
                 f.write(','.join(map(str, title)) + '\n')
                 for line in self.global_data:
                     # 将数据点转换为逗号分隔的字符串，然后写入文件
@@ -314,9 +315,11 @@ class Sender(object):
 
             self.metric_data.append(new_line)
             if self.id == 0: # 只需一个节点记录全局数据
+                # ['delay', 'delivery_rate', 'send_rate', 'cwnd', 'loss_rate', 'ts', 'reward', 'infer_time',
+                #                      'distribution']
                 self.global_data.append(
-                    [curr_ts_ms()-self.ts_first, self.global_state.delay, self.global_state.delivery_rate, self.global_state.send_rate,
-                     self.global_state.cwnd])
+                    [self.global_state.delay, self.global_state.delivery_rate, self.global_state.send_rate,
+                     self.global_state.cwnd, 0, curr_ts_ms()-self.ts_first, 0, 0, 0])
 
             if len(self.metric_data) % 100 == 0:
                 # sys.stderr.write(str(len(self.metric_data)) + "\n")
