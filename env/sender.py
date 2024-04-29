@@ -132,7 +132,6 @@ class Sender(object):
 
     def output_metric(self):
         # 数据导出
-        sys.stderr.write("————————数据导出————————")
         if not self.meter_bandwidth: # 测试带宽 不需要详细文件
             sys.stderr.write(
                 "导出详细数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
@@ -330,10 +329,9 @@ class Sender(object):
                     [self.global_state.delay, self.global_state.delivery_rate, self.global_state.send_rate,
                      self.global_state.cwnd, 0, curr_ts_ms()-self.ts_first, 0, 0, 0])
 
-            if len(self.metric_data) % 100 == 0:
-                # sys.stderr.write(str(len(self.metric_data)) + "\n")
-                if len(self.metric_data) >= 400:
-                    self.output_metric()
+            if curr_ts_ms() - self.ts_first == 12000:
+                self.output_metric()
+
 
             if self.debug:
                 self.sampling_file.write('%.2f ms\n' % ((time.time() - start_sample) * 1000))
