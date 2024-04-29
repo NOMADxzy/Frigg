@@ -261,7 +261,7 @@ class Sender(object):
 
         # At each step end, feed the state:
         if curr_ts_ms() - self.step_start_ms > self.step_len_ms:  # step's end、
-            time1 = curr_ts_ms()
+            time.sleep(3*(self.step_len_ms/10 - 1))  # 对照时延，每次预测越3ms
             loss_rate = 0
             if ack.seq_num - self.start_seq > 0:
                 loss_rate = max(0, 1 - self.arrive_cnt / (ack.seq_num - self.start_seq))
@@ -353,7 +353,6 @@ class Sender(object):
 
                     k = self.compute_performance(loss_rate, last_step=True)
 
-            sys.stderr.write(str(curr_ts_ms() - time1) + "\n")
         return k
 
     def run(self):
