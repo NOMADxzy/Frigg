@@ -85,7 +85,7 @@ class Sender(object):
         self.seq_num = 0
         self.next_ack = 0
         self.cwnd = 10.0
-        self.step_len_ms = step_len_ms
+        self.step_len_ms = 40 - step_len_ms
 
         channel = grpc.insecure_channel('localhost:50053')
         self.stub = indigo_pb2_grpc.acerServiceStub(channel)
@@ -261,7 +261,7 @@ class Sender(object):
 
         # At each step end, feed the state:
         if curr_ts_ms() - self.step_start_ms > self.step_len_ms:  # step's end、
-            time.sleep(3*(self.step_len_ms/10 - 1)/1000)  # 对照时延，每次预测越3ms
+            # time.sleep(3*(self.step_len_ms/10 - 1)/1000)  # 对照时延，每次预测越3ms
             loss_rate = 0
             if ack.seq_num - self.start_seq > 0:
                 loss_rate = max(0, 1 - self.arrive_cnt / (ack.seq_num - self.start_seq))
