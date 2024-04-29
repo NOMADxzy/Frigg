@@ -28,9 +28,10 @@ class RunData:
 
         self.load_data()
 
+    "'data@0&step_len_ms@10&sender_num@5&trace@ATT-LTE-driving&model_path@checkpoint-80.csv'"
     def load_data(self):
         # 加载所有流表现情况
-        template = "data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv"
+        template = 'data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv'
         for i in range(self.sender_num):
             data_file = template.format(i, self.step_len_ms, self.sender_num, self.trace, self.model_path, '')
             self.flow_datas.append(FlowData(data_file))
@@ -38,8 +39,8 @@ class RunData:
                 self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv')
 
         # 加载实时带宽情况
-        tail = "-fix_window_{}".format(40)
-        data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)
+        tail = "&fix_window_{}".format(40)
+        data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)[:-4] + '&global.csv'
         bandwidth_flow_data = FlowData(data_file)
         self.ori_seq, self.ori_bandwidth = bandwidth_flow_data.seqs, bandwidth_flow_data.delivery_rate
 
@@ -56,7 +57,7 @@ class RunData:
             if seq >= self.ori_seq[-1]:
                 break
             bw = self.get_ori_band_width(seq)
-            self.useage.append(cur_bw / bw)
+            self.useage.append(min(1.0, cur_bw / bw))
 
 
 # band_data = RunData(sender_num=5, step_len_ms=10)
