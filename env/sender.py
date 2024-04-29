@@ -353,7 +353,7 @@ class Sender(object):
 
                     k = self.compute_performance(loss_rate, last_step=True)
 
-            sys.stderr.write(str(curr_ts_ms() - time1))
+            sys.stderr.write(str(curr_ts_ms() - time1) + "\n")
         return k
 
     def run(self):
