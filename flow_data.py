@@ -1,8 +1,5 @@
 import os
 
-TPUT_RWD = 1
-DELAY_PENAL
-
 class FlowData:
     def __init__(self, data_file=None):
         self.delay = []
@@ -20,6 +17,7 @@ class FlowData:
         if data_file is None:
             return
         self.data_file = data_file
+        self.load_data()
 
     def load_data(self):
         with open(os.path.join('results', self.data_file), 'r') as f:

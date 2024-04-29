@@ -62,7 +62,7 @@ class Sender(object):
         self.model_name = model_name
 
         self.fix_window = 40
-        self.run_data_tail = "-fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
+        self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
 
         # UDP socket and poller
         self.peer_addr = None
@@ -132,6 +132,7 @@ class Sender(object):
 
     def output_metric(self):
         # 数据导出
+        sys.stderr.write("————————数据导出————————")
         if not self.meter_bandwidth: # 测试带宽 不需要详细文件
             sys.stderr.write(
                 "导出详细数据 port:{} lines:{}\n".format(self.port, len(self.metric_data)))
