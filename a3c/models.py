@@ -22,12 +22,11 @@ class ActorCriticNetwork(object):
 
 
 class ActorCriticLSTM(object):
-    def __init__(self, state_dim, action_cnt):
+    def __init__(self, state_dim, action_cnt, lstm_layers=2):
         self.states = tf.placeholder(tf.float32, [None, state_dim]) # 分别用于存储输入状态和索引
         self.indices = tf.placeholder(tf.int32, [None])
         rnn_in = tf.expand_dims(self.states, [0])  # shape=(1, ?, state_dim)
 
-        lstm_layers = 2
         lstm_state_dim = 256
         lstm_cell_list = []
         for i in xrange(lstm_layers):

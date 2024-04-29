@@ -1,6 +1,6 @@
 import yaml, subprocess
-
 trace_list = ['ATT-LTE-driving', 'TMobile-LTE-driving', 'Verizon-EVDO-driving']
+model_list = ['mfg', 'no_field', 'low_lstm_layer']
 step_len_ms_list = [10,20,30]
 sender_num_list = [1, 5, 20]
 
@@ -18,12 +18,13 @@ command = [
             ]
 
 for _, trace in enumerate(trace_list):
-    for _, step_len_ms in enumerate(step_len_ms_list):
-        for _, sender_num in enumerate(sender_num_list):
-            config_data['trace'] = trace
-            config_data['step_len_ms'] = step_len_ms
-            config_data['flows'] = sender_num
-            with open('template.yaml', 'w') as file:
-                yaml.dump(config_data, file, default_flow_style=False)
+    for _,model in enumerate(model_list):
+        for _, step_len_ms in enumerate(step_len_ms_list):
+            for _, sender_num in enumerate(sender_num_list):
+                config_data['trace'] = trace
+                config_data['step_len_ms'] = step_len_ms
+                config_data['flows'] = sender_num
+                with open('config.yaml', 'w') as file:
+                    yaml.dump(config_data, file, default_flow_style=False)
 
-            # return_code = subprocess.call(command)
+                return_code = subprocess.call(command)

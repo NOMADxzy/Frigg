@@ -13,10 +13,10 @@ import yaml
 
 
 class Learner(object):
-    def __init__(self, state_dim, action_cnt, restore_vars):
+    def __init__(self, state_dim, action_cnt, restore_vars, lstm_layers=2):
         with tf.variable_scope('local'):
             self.pi = ActorCriticLSTM(
-                state_dim=state_dim, action_cnt=action_cnt)
+                state_dim=state_dim, action_cnt=action_cnt, lstm_layers=lstm_layers)
             # # save the current LSTM state of local network
             # self.lstm_state = self.pi.lstm_state_init
 
@@ -93,20 +93,26 @@ def multi_main():
     model_name = config_data['model_name']
     trace = config_data['trace']
 
+    model_name_dict = {'mfg': 'checkpoint-80', 'no_field': 'model', 'low_lstm_layer': 'checkpoint-80'}
+
     #  shared things
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=flows)
     global_state = GlobalState()
-    model_path = path.join(project_root.DIR, 'a3c', 'logs', model_name)
+    model_path = path.join(project_root.DIR, 'a3c', 'logs', model_name_dict[model_name])
+    state_dim = 7 if model_name != 'no_field' else 4
+
     learner = Learner(
-        state_dim=Sender.state_dim,
+        state_dim=state_dim,
         action_cnt=Sender.action_cnt,
-        restore_vars=model_path)
+        restore_vars=model_path,
+        lstm_layers=1 if model_name == 'low_lstm_layer' else 2)
 
     for i, port in enumerate(range(args.port, args.port + flows)):
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
-                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace, model_name=model_name)
+                        step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
+                        model_name=model_name, state_dim=state_dim)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 

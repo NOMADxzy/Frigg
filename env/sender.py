@@ -45,12 +45,11 @@ def format_actions(action_list):
 class Sender(object):
     # RL exposed class/static variables
     max_steps = 1000
-    state_dim = 4  # TODO 更改维度
     action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False, trace="", model_name=""):
+                 meter_bandwidth=False, trace="", model_name="", state_dim=4):
         self.sample_action = None
         self.train = train
         self.port = port
@@ -60,6 +59,7 @@ class Sender(object):
         self.meter_bandwidth = meter_bandwidth
         self.trace = trace
         self.model_name = model_name
+        self.state_dim = state_dim  # TODO 更改维度
 
         self.fix_window = 40
         self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
