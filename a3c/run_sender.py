@@ -63,7 +63,7 @@ def main():
     model_path = path.join(project_root.DIR, 'a3c', 'logs', 'checkpoint-100')
 
     learner = Learner(
-        state_dim=Sender.state_dim,
+        state_dim=4,
         action_cnt=Sender.action_cnt,
         restore_vars=model_path)
 

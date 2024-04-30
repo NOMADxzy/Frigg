@@ -317,7 +317,7 @@ class Sender(object):
                 elif self.model_name == 'indigo':
                     action = self.sample_action(state[:self.state_dim])
                     self.take_action(action)
-                elif self.model_name == 'no_mfg':
+                elif self.model_name == 'no_field':
                     if self.delay_ewma > 200:
                         self.cwnd = MIN_CWND
                     elif self.delay_ewma > 100:
