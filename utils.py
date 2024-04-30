@@ -36,22 +36,27 @@ def read_summary(data_dir):
         data = file.read()
 
     # 使用正则表达式匹配所需数据
-    average_capacity_match = re.search(r'Average throughput: ([\d.]+) Mbit/s', data)
+    average_throughput_match = re.search(r'Average throughput: ([\d.]+) Mbit/s', data)
+    average_capacity_match = re.search(r'Average capacity: ([\d.]+) Mbit/s', data)
     loss_rate_match = re.search(r'Loss rate: ([\d.]+)%', data)
     delay_95th_percentile_match = re.search(r'95th percentile per-packet one-way delay: ([\d.]+) ms', data)
 
     # 提取并打印匹配到的数据
-    tput,delay,loss = 0,0,0
+    tput,delay,loss,capacity,reward = 0,0,0,0,0
+    if average_throughput_match:
+        tput = average_throughput_match.group(1)
     if average_capacity_match:
-        tput = average_capacity_match.group(1)
+        capacity = average_capacity_match.group(1)
     if loss_rate_match:
         loss = loss_rate_match.group(1)
     if delay_95th_percentile_match:
         delay = delay_95th_percentile_match.group(1)
-    return float(tput), float(delay), float(loss)
+
+    reward = float(tput) - 0.01 * float(delay) - 0.05 * float(loss) + 20
+    return float(tput), float(delay), float(loss), float(tput) / float(capacity), reward
 
 
-def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title):
+def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_place=None):
     n_groups = len(data_list[0])
 
     # 创建一个索引数组，为每组数据分配位置
@@ -71,7 +76,10 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title):
     ax.set_xticklabels(x_variables)
     ax.legend()
     # 显示图形
-    plt.show()
+    if save_place is not None:
+        plt.savefig(save_place)
+    else:
+        plt.show()
 
 
 
