@@ -315,9 +315,9 @@ class Sender(object):
                             action = self.sample_action(state[:self.state_dim])
                     self.take_action(action)
                 else:
-                    if self.delay_ewma > 100:
+                    if self.delay_ewma > 200:
                         self.cwnd = MIN_CWND
-                    elif self.delay_ewma > 50:
+                    elif self.delay_ewma > 100:
                         action = 1
                         self.take_action(action)
                     else:
