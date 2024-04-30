@@ -303,9 +303,9 @@ class Sender(object):
                 # self.set_cwnd(cwnd_val)
 
                 if self.is_mfg:
-                    if self.delay_ewma > 200:
+                    if self.delay_ewma > 200 * (10 / self.sender_num):
                         action = 0
-                    elif self.delay_ewma > 100:
+                    elif self.delay_ewma > 100 * (10 / self.sender_num):
                         action = 1
                     else:
                         if not self.global_state is None:
@@ -314,7 +314,19 @@ class Sender(object):
                         else:
                             action = self.sample_action(state[:self.state_dim])
                     self.take_action(action)
-                else:
+                elif self.model_name == 'indigo':
+                    action = self.sample_action(state[:self.state_dim])
+                    self.take_action(action)
+                elif self.model_name == 'no_mfg':
+                    if self.delay_ewma > 200:
+                        self.cwnd = MIN_CWND
+                    elif self.delay_ewma > 100:
+                        action = 1
+                        self.take_action(action)
+                    else:
+                        action = 4
+                        self.take_action(action)
+                elif self.model_name == 'low_lstm_layer':
                     if self.delay_ewma > 200:
                         self.cwnd = MIN_CWND
                     elif self.delay_ewma > 100:

@@ -93,20 +93,21 @@ def multi_main():
     model_name = config_data['model_name']
     trace = config_data['trace']
 
-    model_name_dict = {'mfg': 'checkpoint-80', 'no_field': 'model', 'low_lstm_layer': 'checkpoint-80'}
+    model_name_dict = {'mfg': 'checkpoint-80', 'no_field': 'model', 'low_lstm_layer': 'checkpoint-160',
+                       'indigo': 'model'}
+    state_dim = 7 if model_name == 'mfg' else 4
 
     #  shared things
     senders = []
     executor = futures.ThreadPoolExecutor(max_workers=flows)
     global_state = GlobalState()
     model_path = path.join(project_root.DIR, 'a3c', 'logs', model_name_dict[model_name])
-    state_dim = 7 if model_name != 'no_field' else 4
 
     learner = Learner(
         state_dim=state_dim,
         action_cnt=Sender.action_cnt,
         restore_vars=model_path,
-        lstm_layers=1 if model_name == 'low_lstm_layer' else 2)
+        lstm_layers=2)
 
     for i, port in enumerate(range(args.port, args.port + flows)):
         # start sender as an instance of Sender class  sender_num, step_len_ms

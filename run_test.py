@@ -1,6 +1,6 @@
 import yaml, subprocess
 trace_list = ['ATT-LTE-driving', 'TMobile-LTE-driving', 'Verizon-EVDO-driving']
-model_list = ['mfg', 'no_field', 'low_lstm_layer']
+model_list = ['mfg', 'no_field', 'low_lstm_layer', 'indigo']
 step_len_ms_list = [10,20,30]
 sender_num_list = [1, 5, 20]
 
