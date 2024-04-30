@@ -13,7 +13,7 @@ from helpers.helpers import (
     curr_ts_ms, apply_op,
     READ_FLAGS, ERR_FLAGS, READ_ERR_FLAGS, WRITE_FLAGS, ALL_FLAGS)
 import indigo_pb2_grpc, grpc, indigo_pb2
-import copy
+import copy, math
 
 MIN_CWND = 1.0
 MAX_CWND = 40.0
@@ -303,9 +303,9 @@ class Sender(object):
                 # self.set_cwnd(cwnd_val)
 
                 if self.is_mfg:
-                    if self.delay_ewma > 200 * (10 / self.sender_num):
+                    if self.delay_ewma > 100 * int(math.sqrt(20/self.sender_num)):
                         action = 0
-                    elif self.delay_ewma > 100 * (10 / self.sender_num):
+                    elif self.delay_ewma > 50 * int(math.sqrt(20/self.sender_num)):
                         action = 1
                     else:
                         if not self.global_state is None:
@@ -318,9 +318,9 @@ class Sender(object):
                     action = self.sample_action(state[:self.state_dim])
                     self.take_action(action)
                 elif self.model_name == 'no_field':
-                    if self.delay_ewma > 200:
+                    if self.delay_ewma > 400:
                         self.cwnd = MIN_CWND
-                    elif self.delay_ewma > 100:
+                    elif self.delay_ewma > 200:
                         action = 1
                         self.take_action(action)
                     else:
@@ -338,7 +338,7 @@ class Sender(object):
                             action = self.sample_action(input_state[:self.state_dim])
                         else:
                             action = self.sample_action(state[:self.state_dim])
-                        self.take_action(action)
+                        self.take_action(min(action, 3))
 
 
                         # 统计

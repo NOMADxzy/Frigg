@@ -7,7 +7,7 @@ import utils
 
 default_values = {}
 all_compare_datas = {
-    'trace': ['ATT-LTE-driving', 'TMobile-LTE-driving', 'Verizon-EVDO-driving'],
+    'trace': ['ATT-LTE-driving', 'TMobile-LTE-driving', '12mbps'],
     'model_name': ['mfg', 'no_field', 'low_lstm_layer'],
     'step_len_ms': [10, 20, 30],
     'flows': [1, 5, 20]
