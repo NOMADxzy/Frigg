@@ -302,19 +302,34 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                if self.is_mfg and self.delay_ewma > 200:
-                    action = 0
-                elif self.is_mfg and self.delay_ewma > 100:
-                    action = 1
-                else:
-                    if not self.global_state is None:
-                        input_state = self.global_state.get_input_state(cur_state)
-                        action = self.sample_action(input_state[:self.state_dim])
+                if self.is_mfg:
+                    if self.delay_ewma > 200:
+                        action = 0
+                    elif self.delay_ewma > 100:
+                        action = 1
                     else:
-                        action = self.sample_action(state[:self.state_dim])
-                self.take_action(action)
+                        if not self.global_state is None:
+                            input_state = self.global_state.get_input_state(cur_state)
+                            action = self.sample_action(input_state[:self.state_dim])
+                        else:
+                            action = self.sample_action(state[:self.state_dim])
+                    self.take_action(action)
+                else:
+                    if self.delay_ewma > 100:
+                        self.cwnd = MIN_CWND
+                    elif self.delay_ewma > 50:
+                        action = 1
+                        self.take_action(action)
+                    else:
+                        if not self.global_state is None:
+                            input_state = self.global_state.get_input_state(cur_state)
+                            action = self.sample_action(input_state[:self.state_dim])
+                        else:
+                            action = self.sample_action(state[:self.state_dim])
+                        self.take_action(action)
 
-            # 统计
+
+                        # 统计
             rwd, distribution = self.compute_performance(loss_rate)
             new_line = copy.deepcopy(state)  # 状态信息
             new_line.append(loss_rate)  # 丢包率
