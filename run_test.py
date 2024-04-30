@@ -24,6 +24,7 @@ for _, trace in enumerate(trace_list):
                 config_data['trace'] = trace
                 config_data['step_len_ms'] = step_len_ms
                 config_data['flows'] = sender_num
+                config_data['model_name'] = model
                 with open('config.yaml', 'w') as file:
                     yaml.dump(config_data, file, default_flow_style=False)
 

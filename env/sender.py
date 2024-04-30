@@ -60,6 +60,7 @@ class Sender(object):
         self.trace = trace
         self.model_name = model_name
         self.state_dim = state_dim  # TODO 更改维度
+        self.is_mfg = self.model_name == 'mfg'
 
         self.fix_window = 40
         self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
@@ -301,9 +302,9 @@ class Sender(object):
                 # cwnd_val = 5
                 # self.set_cwnd(cwnd_val)
 
-                if self.delay_ewma > 200:
+                if self.is_mfg and self.delay_ewma > 200:
                     action = 0
-                elif self.delay_ewma > 100:
+                elif self.is_mfg and self.delay_ewma > 100:
                     action = 1
                 else:
                     if not self.global_state is None:

@@ -29,7 +29,7 @@ class RunData:
         self.load_data()
 
     "'data@0&step_len_ms@10&sender_num@5&trace@ATT-LTE-driving&model_path@checkpoint-80.csv'"
-    def load_data(self):
+    def load_data(self, load_band=False):
         # 加载所有流表现情况
         template = 'data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv'
         for i in range(self.sender_num):
@@ -37,7 +37,11 @@ class RunData:
             self.flow_datas.append(FlowData(data_file))
             if i == 0:
                 self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv')
+                for i in range(len(self.sum_flow_data.delay)):
+                    self.sum_flow_data.delay[i] /= self.sender_num
 
+        if not load_band:
+            return
         # 加载实时带宽情况
         tail = "&fix_window_{}".format(40)
         data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)[:-4] + '&global.csv'
@@ -66,31 +70,8 @@ data_flow5_step10_traceATT_model80 = RunData(sender_num=5, step_len_ms=10, trace
 # data_flow1_step20 = RunData('data0-step_len_ms20-sender_num1-meter_bandwidthFalse.csv',
 #                             ori_band_width=band_data.delivery_rate, ori_seq=band_data.seqs)
 
-data_flow5_step10_traceATT_model80.compute_useage()
+# data_flow5_step10_traceATT_model80.compute_useage()
 
-utils.draw_list(data_list=data_flow5_step10_traceATT_model80.sum_flow_data.delivery_rate)
-utils.draw_list(data_list=data_flow5_step10_traceATT_model80.useage)
-# utils.draw_list(data_list=band_data.send_rate)
-
-
-# draw_list(data_list=data_flow1_step10.useage)
-# draw_list(data_list=data_flow1_step20.useage)
-
-
-# names = ["delay", "send_rate", "delivery_rate", "cwnd"]
-# cols = [delay, send_rate, delivery_rate, cwnd]
-#
-# for i in range(0, len(names)):
-#     # 绘制图形
-#     plt.plot(seqs, cols[i], label=names[i])
-#
-#     # 添加标题和标签
-#     plt.title(names[i])
-#     plt.xlabel('seq')
-#     plt.ylabel(names[i])
-#     plt.legend()
-#     plt.savefig("results/%s.png" % names[i])
-
-# 显示或保存图形
-# plt.show()
-# 或者保存到文件
+# utils.draw_list(data_list=data_flow5_step10_traceATT_model80.sum_flow_data.delivery_rate)
+# utils.draw_list(data_list=data_flow5_step10_traceATT_model80.useage)
+utils.draw_list(data_list=data_flow5_step10_traceATT_model80.sum_flow_data.delay)

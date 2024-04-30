@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import os.path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
+import re
 
 
 def draw_list(data_list, x_data=None):
@@ -24,3 +27,51 @@ def draw_list(data_list, x_data=None):
     plt.plot(x_fine, y_smooth, label='Cubic Spline', color='red')
     plt.legend()
     plt.show()
+
+
+def read_summary(data_dir):
+
+    # 打开并读取文件内容
+    with open(os.path.join(data_dir, 'indigo_a3c_test_stats_run1.log'), 'r') as file:
+        data = file.read()
+
+    # 使用正则表达式匹配所需数据
+    average_capacity_match = re.search(r'Average throughput: ([\d.]+) Mbit/s', data)
+    loss_rate_match = re.search(r'Loss rate: ([\d.]+)%', data)
+    delay_95th_percentile_match = re.search(r'95th percentile per-packet one-way delay: ([\d.]+) ms', data)
+
+    # 提取并打印匹配到的数据
+    tput,delay,loss = 0,0,0
+    if average_capacity_match:
+        tput = average_capacity_match.group(1)
+    if loss_rate_match:
+        loss = loss_rate_match.group(1)
+    if delay_95th_percentile_match:
+        delay = delay_95th_percentile_match.group(1)
+    return float(tput), float(delay), float(loss)
+
+
+def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title):
+    n_groups = len(data_list[0])
+
+    # 创建一个索引数组，为每组数据分配位置
+    index = np.arange(n_groups)
+    bar_width = 0.2  # 柱状图的宽度
+
+    # 绘制柱状图
+    fig, ax = plt.subplots()
+    for i,bar_data  in enumerate(data_list):
+        ax.bar(index + i*bar_width, bar_data, bar_width, label=algo_names[i])
+
+    # 添加标签、标题和图例
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.set_xticks(index + bar_width)
+    ax.set_xticklabels(x_variables)
+    ax.legend()
+    # 显示图形
+    plt.show()
+
+
+
