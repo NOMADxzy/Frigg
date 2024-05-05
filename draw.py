@@ -6,7 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 import bisect
 from flow_data import FlowData
-import utils
+import utils,config
 
 
 # 记录一次运行中所有流的表现情况
@@ -19,6 +19,7 @@ class RunData:
         self.step_len_ms = step_len_ms
         self.trace = trace
         self.model_path = model_path
+        self.loss_rate = None
 
         self.useage = []
 
@@ -27,18 +28,9 @@ class RunData:
         self.ori_seq = None
 
         # 绘图参数
-        self.ms_per_bin = 500  # ms
+        self.ms_per_bin = config.ms_per_bin  # ms
 
         self.load_data()
-
-    def ms_to_bin(self, ts, first_ts):
-        return int((ts - first_ts) / self.ms_per_bin)
-
-    def next_seq(self, seq):
-        if len(seq) == 0:
-            return 0
-        else:
-            return seq[-1] + 1
 
     def process_data(self, flow_data):
         x_data = flow_data.seqs
@@ -48,31 +40,50 @@ class RunData:
         new_send_rate = []
         new_cwnd = []
         new_loss = []
+        new_reward = []
 
-        metric_acc = [0 for i in range(4)]
+        result_dir = "./results/{}/{}/{}/{}/".format(self.trace, self.model_path,
+                                                     self.step_len_ms, self.sender_num)
+        tput, delay, loss, useage, reward = utils.read_summary(result_dir)
+        self.loss_rate = loss
+
+        metric_acc = [0 for _ in range(4)]
         metric_cnt = 0
 
+        for i in range(len(flow_data.seqs)):
+            flow_data.seqs[i] += 3500
+
         first_ts = x_data[0]
+        for _ in range(utils.ms_to_bin(first_ts)):
+            new_seq.append(utils.next_seq(new_seq))
+            new_delay.append(0)
+            new_delivery_rate.append(0)
+            new_send_rate.append(0)
+            new_cwnd.append(0)
+            new_loss.append(0)
+            new_reward.append(0)
         for i in range(len(x_data) + 1):
             bin_id = 0
             if i < len(x_data):
-                bin_id = self.ms_to_bin(x_data[i], first_ts)
-            if i == len(x_data) or bin_id > self.next_seq(new_seq):
-                new_seq.append(self.next_seq(new_seq))
+                bin_id = utils.ms_to_bin(x_data[i])
+            if i == len(x_data) or bin_id > utils.next_seq(new_seq):
+                new_seq.append(utils.next_seq(new_seq))
                 new_delay.append(metric_acc[0] / metric_cnt)
                 new_delivery_rate.append(metric_acc[1] / metric_cnt)
                 new_send_rate.append(metric_acc[2] / metric_cnt)
                 new_cwnd.append(metric_acc[3] / metric_cnt)
                 new_loss.append((new_send_rate[-1] - new_delivery_rate[-1]) / new_send_rate[-1])
+                new_reward.append(utils.get_qoe(new_delivery_rate[-1], new_delay[-1], self.loss_rate))
 
                 if i < len(x_data):
-                    while self.next_seq(new_seq) < bin_id:  # 带宽太低，需要插入一些点
-                        new_seq.append(self.next_seq(new_seq))
-                        new_delay.append(0)
-                        new_delivery_rate.append(0)
-                        new_send_rate.append(0)
-                        new_cwnd.append(0)
-                        new_loss.append(0)
+                    while utils.next_seq(new_seq) < bin_id:  # 带宽太低，需要插入一些点
+                        new_seq.append(utils.next_seq(new_seq))
+                        new_delay.append(new_delay[-1])
+                        new_delivery_rate.append(new_delivery_rate[-1])
+                        new_send_rate.append(new_send_rate[-1])
+                        new_cwnd.append(new_cwnd[-1])
+                        new_loss.append(new_loss[-1])
+                        new_reward.append(new_reward[-1])
                     metric_acc = [flow_data.delay[i], flow_data.delivery_rate[i], flow_data.send_rate[i],
                                   flow_data.cwnd[i]]
                     metric_cnt = 1
@@ -83,12 +94,15 @@ class RunData:
                 metric_acc[3] += flow_data.cwnd[i]
                 metric_cnt += 1
 
+        for i in range(len(new_seq)):
+            new_seq[i] = new_seq[i] * self.ms_per_bin / 1000 # 转成秒单位，且初始有3s的偏移
         flow_data.seqs = new_seq
         flow_data.delay = new_delay
         flow_data.delivery_rate = new_delivery_rate
         flow_data.send_rate = new_send_rate
-        flow_data.new_cwnd = new_cwnd
+        flow_data.cwnd = new_cwnd
         flow_data.bytes_in_flight_rate = new_loss
+        flow_data.reward = new_reward
 
 
     "'data@0&step_len_ms@10&sender_num@5&trace@ATT-LTE-driving&model_path@checkpoint-80.csv'"
@@ -129,21 +143,3 @@ class RunData:
             self.useage.append(min(1.0, cur_bw / bw))
 
 
-# band_data = RunData(sender_num=5, step_len_ms=10)
-data_flow1_step10_traceATT_model80 = RunData(sender_num=1, step_len_ms=10, trace='ATT-LTE-driving',
-                                             model_path='checkpoint-80')
-# data_flow1_step20 = RunData('data0-step_len_ms20-sender_num1-meter_bandwidthFalse.csv',
-#                             ori_band_width=band_data.delivery_rate, ori_seq=band_data.seqs)
-
-# data_flow5_step10_traceATT_model80.compute_useage()
-
-# utils.draw_list(data_list=data_flow5_step10_traceATT_model80.sum_flow_data.delivery_rate)
-# utils.draw_list(data_list=data_flow5_step10_traceATT_model80.useage)
-
-data_flow1_step10_traceATT_model80.process_data(data_flow1_step10_traceATT_model80.sum_flow_data)
-utils.draw_list(y_list=data_flow1_step10_traceATT_model80.sum_flow_data.delivery_rate,
-                x_list=data_flow1_step10_traceATT_model80.sum_flow_data.seqs, label="delivery_rate")
-utils.draw_list(y_list=data_flow1_step10_traceATT_model80.sum_flow_data.delay,
-                x_list=data_flow1_step10_traceATT_model80.sum_flow_data.seqs, label="delay")
-utils.draw_list(y_list=data_flow1_step10_traceATT_model80.sum_flow_data.cwnd,
-                x_list=data_flow1_step10_traceATT_model80.sum_flow_data.seqs, label="cwnd")

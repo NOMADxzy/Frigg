@@ -20,7 +20,7 @@ class FlowData:
         self.load_data()
 
     def load_data(self):
-        with open(os.path.join('results', self.data_file), 'r') as f:
+        with open(os.path.join('results/detail', self.data_file), 'r') as f:
             row_id = -1
             for line in f:
                 row_id += 1

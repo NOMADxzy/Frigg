@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 import re
+import config
 
 ####  figure 格式
 plt.rcParams['font.family'] = ['Arial']
@@ -15,6 +16,14 @@ ax.set_ylabel(..., fontsize=20)
 
 markers = ['o', 'x', '.', ',', 'v', '<', '>', '^', '1', '2', 'p']
 
+def ms_to_bin(ts, first_ts=config.first_second*1000):
+    return int((ts - first_ts) / config.ms_per_bin)
+
+def next_seq(seq):
+    if len(seq) == 0:
+        return 0
+    else:
+        return seq[-1] + 1
 def draw_list_simple(data_list, x_data=None, label="Data"):
     if x_data is None:
         x_data = np.arange(len(data_list))
@@ -37,6 +46,11 @@ def draw_list_simple(data_list, x_data=None, label="Data"):
     plt.show()
 
 
+def get_qoe(tput, delay, loss):
+    # reward = float(tput) - 0.01 * float(delay) - 0.05 * float(loss)
+    reward = float(tput) - 0.005 * float(delay) - 100 * float(loss)
+    return reward
+
 def read_summary(data_dir):
     # 打开并读取文件内容
     with open(os.path.join(data_dir, 'indigo_a3c_test_stats_run1.log'), 'r') as file:
@@ -55,11 +69,11 @@ def read_summary(data_dir):
     if average_capacity_match:
         capacity = average_capacity_match.group(1)
     if loss_rate_match:
-        loss = loss_rate_match.group(1)
+        loss = float(loss_rate_match.group(1)) / 100
     if delay_95th_percentile_match:
         delay = delay_95th_percentile_match.group(1)
 
-    reward = float(tput) - 0.01 * float(delay) - 0.05 * float(loss) + 20
+    reward = get_qoe(tput, delay, loss)
     return float(tput), float(delay), float(loss), float(tput) / float(capacity), reward
 
 
@@ -89,16 +103,14 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_pl
         plt.show()
 
 
-def draw_list(y_lists, x_list=None, label="data", save_dir=None):
-    if x_list is None:
-        x_list = np.arange(len(y_lists[0]))
+def draw_list(y_lists, algos, y_label="data", save_dir=None):
+    x_list = np.arange(0, 40, step=config.step_len)
+    for idx, y_list in enumerate(y_lists):
+        plt.plot(x_list[:len(y_list)], y_list, label=algos[idx], linewidth=2.5, marker=markers[idx % len(markers)],
+                 markersize=8, linestyle='dashed')
 
     plt.xlabel("time")
-
-    for idx, y_list in enumerate(y_lists):
-        plt.plot(x_list, y_list, label="15FPS", linewidth=2.5, marker=markers[idx % len(markers)],
-                 markersize=8, linestyle='dashed')
-        plt.ylabel(label)
+    plt.ylabel(y_label)
 
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
@@ -109,3 +121,18 @@ def draw_list(y_lists, x_list=None, label="data", save_dir=None):
         plt.savefig(save_dir, dpi=400, bbox_inches='tight')
 
     plt.show()
+
+def reduce_list(lst, new_length):
+    """
+    输入：
+    lst - 要缩短的列表
+    new_length - 新的列表所需长度
+    输出：
+    局部均匀降低长度后的列表
+    """
+    num_segments = len(lst) // new_length
+    reduced_list = []
+    for i in range(new_length):
+        segment = lst[i*num_segments:(i+1)*num_segments]
+        reduced_list.append(np.mean(segment))
+    return reduced_list
