@@ -58,7 +58,7 @@ def draw_list_simple(data_list, x_data=None, label="Data"):
     y_smooth = spline(x_fine)
 
     # 绘制结果
-    plt.scatter(x_data, y_data, label=algo_name_changes[label])
+    plt.scatter(x_data, y_data, label=algo_name_changes.get(label, label))
     plt.plot(x_fine, y_smooth, label='Spline', color='red')
     plt.legend()
     plt.show()
@@ -66,7 +66,7 @@ def draw_list_simple(data_list, x_data=None, label="Data"):
 
 def get_qoe(tput, delay, loss, qoe_type=0):
     tput_factor = 5
-    delay_penalty = 0.01
+    delay_penalty = 0.5
     loss_penalty = 100
 
     prefer_factor = 2
@@ -119,6 +119,7 @@ def get_usage(tput, trace):
     tmp_tput, _, _, useage, _ = read_summary(result_dir)
     return tput / (tmp_tput / useage)
 
+
 def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_place=None):
     n_groups = len(data_list[0])
 
@@ -129,7 +130,7 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_pl
     # 绘制柱状图
     fig, ax = plt.subplots()
     for i, bar_data in enumerate(data_list):
-        ax.bar(index + i * bar_width, bar_data, bar_width, label=algo_name_changes[algo_names[i]])
+        ax.bar(index + i * bar_width, bar_data, bar_width, label=algo_name_changes.get(algo_names[i], algo_names[i]))
 
     # 添加标签、标题和图例
     ax.set_xlabel(xlabel)
@@ -177,7 +178,7 @@ def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, sa
     index = np.arange(len(data_list[0]))
     bar_width = 0.2  # 柱状图的宽度
     for i, data in enumerate(data_list):
-        rects = ax.bar(index + i * bar_width - bar_width*1.5, data, bar_width, label=algo_names[i],
+        rects = ax.bar(index + i * bar_width - bar_width * 1.5, data, bar_width, label=algo_names[i],
                        edgecolor='lightgoldenrodyellow', linewidth=.8,
                        color=histogram_colors[i % len(histogram_colors)],
                        hatch=hatchs[i % len(hatchs)])
@@ -209,7 +210,7 @@ def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None):
         x_list = step_list
 
     for idx, y_list in enumerate(y_lists):
-        plt.plot(x_list[:len(y_list)], y_list, label=algo_name_changes[algos[idx]], linewidth=2.5,
+        plt.plot(x_list[:len(y_list)], y_list, label=algo_name_changes.get(algos[idx], algos[idx]), linewidth=2.5,
                  marker=markers[idx % len(markers)],
                  markersize=8, linestyle='dashed')
 
@@ -278,7 +279,7 @@ def draw_elliptic(tput_lists, delay_lists, algo_lists, save_dir=None):
         # 用三角形标注平均值
         mean_y, mean_x = np.mean(tputs), np.mean(delays)
         ax.scatter(mean_x, mean_y, color=colors[i % len(colors)], marker=markers[i % len(markers)], s=100,
-                   label=algo_name_changes[algo])
+                   label=algo_name_changes.get(algo, algo))
         plt.legend(fontsize=5)
 
     # 设置坐标标签字体大小
@@ -293,14 +294,14 @@ def draw_scatter(usages, loss_rates, algo_lists, save_dir=None):
     plt.rcParams['font.family'] = ['Arial']
     fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
     # label字体
-    ax.set_xlabel("LossRates", fontsize=20)
-    ax.set_ylabel("Usage", fontsize=20)
+    ax.set_xlabel("Loss Rate", fontsize=20)
+    ax.set_ylabel("Bandwidth Utilization", fontsize=20)
 
     algo_cnts = len(algo_lists)
     for i in range(algo_cnts):
         algo = algo_lists[i]
         ax.scatter(loss_rates[i], usages[i], color=colors[i % len(colors)], marker=markers[i % len(markers)], s=100,
-                   label=algo_name_changes[algo])
+                   label=algo_name_changes.get(algo, algo))
         plt.legend(fontsize=5)
 
     # 设置坐标标签字体大小

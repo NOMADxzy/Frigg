@@ -109,11 +109,12 @@ def multi_main():
         restore_vars=model_path,
         lstm_layers=2)
 
+    wait_interval = 4
     for i, port in enumerate(range(args.port, args.port + flows)):
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
                         step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
-                        model_name=model_name, state_dim=state_dim)
+                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval)
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 

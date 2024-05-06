@@ -21,6 +21,7 @@ algos_names = all_compare_datas['model_name']
 
 
 def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=False):
+    all_compare_datas['model_name'] = ['mfg', 'no_field', 'low_lstm_layer', 'indigo']
     if compare_val_list is None:
         compare_val_list = all_compare_datas[compare_type]
     results = {
@@ -52,14 +53,14 @@ def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=F
             results['useage'][i].append(useage)
             results['reward'][i].append(reward)
 
-    result_dir = os.path.join('plot_results', trace, compare_type)
+    result_dir = os.path.join('plot_compare', trace, compare_type)
     if save and not os.path.exists(result_dir):
         os.makedirs(result_dir)
 
     for y_label, data_list in results.items():
         utils.draw_histogram(data_list, algos_names, compare_type, compare_val_list, y_label,
-                        '{}_{}'.format(y_label, trace),
-                        os.path.join(result_dir, '{}.png'.format(y_label)) if save else None)
+                             '{}_{}'.format(y_label, trace),
+                             os.path.join(result_dir, '{}.png'.format(y_label)) if save else None)
 
 
 if __name__ == '__main__':

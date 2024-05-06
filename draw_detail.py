@@ -94,7 +94,6 @@ for i in range(len(traces)):
 
     frigg_flow_data = RunData(sender_num=1 if trace=='ATT-LTE-driving' else 5, step_len_ms=10, trace=trace,
                               model_path='mfg')
-    frigg_flow_data.process_data(frigg_flow_data.sum_flow_data)
 
     tput_lists = [frigg_flow_data.sum_flow_data.delivery_rate]
     delay_lists = [frigg_flow_data.sum_flow_data.delay]
@@ -131,18 +130,18 @@ for i in range(len(traces)):
     # utils.draw_elliptic(tput_lists, delay_lists, algos, save_dir=os.path.join(result_dir, 'elliptic.png'))
 
     # 散点图
-    # utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
+    utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
 
     # 柱状QoE图
     all_type_qoes = []
-    qoe_types = ['α=5_β=0.01_γ=100', 'α=10_β=0.01_γ=100', 'α=5_β=0.02_γ=100', 'α=5_β=0.01_γ=200']
+    qoe_types = ['α=5,β=0.01,λ=100', 'α=10,β=0.01,λ=100', 'α=5,β=0.02,λ=100', 'α=5,β=0.01,λ=200']
     for qoe_type in range(4):
         cur_qoes = []
         for _, metric_tuple in enumerate(total_results):
             qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
             cur_qoes.append(qoe_val)
         all_type_qoes.append(cur_qoes)
-    utils.draw_histogram(all_type_qoes, qoe_types, 'Algos', algos, 'QoE',
+    utils.draw_histogram(all_type_qoes, qoe_types, 'Algos', algos, 'Utility',
                          '{}_{}'.format('Qoe', trace),
                          os.path.join(result_dir, '{}.png'.format('total_qoe')))
 

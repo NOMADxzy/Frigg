@@ -13,7 +13,7 @@ import utils,config
 class RunData:
     def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path=''):
         self.flow_datas = []
-        self.sum_flow_data = None
+        self.sum_flow_data = FlowData()
 
         self.sender_num = sender_num
         self.step_len_ms = step_len_ms
@@ -35,6 +35,10 @@ class RunData:
 
         self.load_data()
 
+        self.process_data(self.sum_flow_data)
+        for flow_data in self.flow_datas:
+            self.process_data(flow_data)
+
     def process_data(self, flow_data):
         x_data = flow_data.seqs
         new_seq = []
@@ -44,13 +48,6 @@ class RunData:
         new_cwnd = []
         new_loss = []
         new_reward = []
-
-        result_dir = "./results/{}/{}/{}/{}/".format(self.trace, self.model_path,
-                                                     self.step_len_ms, self.sender_num)
-        tput, delay, loss, useage, reward = utils.read_summary(result_dir)
-        self.loss_rate = loss
-        self.delay = delay
-        self.tput = tput
 
         metric_acc = [0 for _ in range(4)]
         metric_cnt = 0
@@ -133,14 +130,21 @@ class RunData:
                 for i in range(len(self.sum_flow_data.delay)):
                     self.sum_flow_data.delay[i] /= self.sender_num
 
-        if not load_band:
-            return
-        # 加载实时带宽情况
-        tail = "&fix_window_{}".format(40)
-        data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)[
-                    :-4] + '&global.csv'
-        bandwidth_flow_data = FlowData(data_file)
-        self.ori_seq, self.ori_bandwidth = bandwidth_flow_data.seqs, bandwidth_flow_data.delivery_rate
+        # 加载总体metric
+        result_dir = "./results/{}/{}/{}/{}/".format(self.trace, self.model_path,
+                                                     self.step_len_ms, self.sender_num)
+        tput, delay, loss, useage, reward = utils.read_summary(result_dir)
+        self.loss_rate = loss
+        self.delay = delay
+        self.tput = tput
+
+        if load_band:
+            # 加载实时带宽情况
+            tail = "&fix_window_{}".format(40)
+            data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)[
+                        :-4] + '&global.csv'
+            bandwidth_flow_data = FlowData(data_file)
+            self.ori_seq, self.ori_bandwidth = bandwidth_flow_data.seqs, bandwidth_flow_data.delivery_rate
 
     def get_ori_band_width(self, seq):
         left = bisect.bisect_left(self.ori_seq, seq)

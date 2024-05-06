@@ -49,7 +49,7 @@ class Sender(object):
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False, trace="", model_name="", state_dim=4):
+                 meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0):
         self.sample_action = None
         self.train = train
         self.port = port
@@ -61,6 +61,7 @@ class Sender(object):
         self.model_name = model_name
         self.state_dim = state_dim  # TODO 更改维度
         self.is_mfg = self.model_name == 'mfg'
+        self.wait_second = wait_second
 
         self.fix_window = 40
         self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
@@ -386,6 +387,7 @@ class Sender(object):
     def run(self):
         while not self.handshaked:
             time.sleep(1)
+        time.sleep(self.wait_second)
         TIMEOUT = 1000  # ms
         sys.stderr.write("start run sender " + str(self.port) + "\n")
 
