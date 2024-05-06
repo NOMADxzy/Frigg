@@ -3,7 +3,7 @@ from frigg import RunData
 
 # traces = ['ATT-LTE-driving', 'TMobile-LTE-driving', '12mbps']
 traces = ['12mbps']
-flow = 2
+flow = 4
 algos = ['mfg']
 
 for i in range(len(traces)):
@@ -14,7 +14,7 @@ for i in range(len(traces)):
 
         if algo == 'mfg':
             frigg_flow_data = RunData(sender_num=flow, step_len_ms=10, trace=trace,
-                                      model_path='mfg')
+                                      model_path='mfg', start_interval=4)
             for flow_data in frigg_flow_data.flow_datas:
                 tput_lists.append(flow_data.delivery_rate)
 

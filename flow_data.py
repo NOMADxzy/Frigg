@@ -1,7 +1,8 @@
 import os
 
 class FlowData:
-    def __init__(self, data_file=None):
+    def __init__(self, data_file=None, id=0):
+        self.id = id
         self.delay = []
         self.delivery_rate = []
         self.send_rate = []

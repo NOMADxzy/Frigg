@@ -11,7 +11,7 @@ import utils,config
 
 # 记录一次运行中所有流的表现情况
 class RunData:
-    def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path=''):
+    def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path='', start_interval=0):
         self.flow_datas = []
         self.sum_flow_data = FlowData()
 
@@ -37,9 +37,9 @@ class RunData:
 
         self.process_data(self.sum_flow_data)
         for flow_data in self.flow_datas:
-            self.process_data(flow_data)
+            self.process_data(flow_data, interval=start_interval*flow_data.id)
 
-    def process_data(self, flow_data):
+    def process_data(self, flow_data, interval=0):
         x_data = flow_data.seqs
         new_seq = []
         new_delivery_rate = []
@@ -53,7 +53,7 @@ class RunData:
         metric_cnt = 0
 
         for i in range(len(flow_data.seqs)):
-            flow_data.seqs[i] += 3500
+            flow_data.seqs[i] += 3500 + interval*1000
 
         first_ts = x_data[0]
         for _ in range(utils.ms_to_bin(first_ts)):  # 前期补0
@@ -124,7 +124,7 @@ class RunData:
         template = 'data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv'
         for i in range(self.sender_num):
             data_file = template.format(i, self.step_len_ms, self.sender_num, self.trace, self.model_path, '')
-            self.flow_datas.append(FlowData(data_file))
+            self.flow_datas.append(FlowData(data_file, id=i))
             if i == 0:
                 self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv')
                 for i in range(len(self.sum_flow_data.delay)):

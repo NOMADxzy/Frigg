@@ -26,7 +26,7 @@ class GlobalState:
 
         self.client_num = 0
         self.client_states = {}
-        self.phi = 0.2
+        self.phi = 0.8
         self.cwnd_distributions = [0 for _ in range(len(distributions) + 1)]
 
     def overly(self, cur_state):
