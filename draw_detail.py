@@ -4,15 +4,16 @@ import numpy as np
 
 import utils
 import json
-from draw import RunData
+from frigg import RunData
 import config
 
 # def combine(t_dict:{}, flows_dict):
 # list_len = min([len(t_list) for t_list in t_dict.values()])
 
 # algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'ledbat', 'pcc', 'pcc_experimental', 'scream', 'sprout', 'verus', 'vivace']
-algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'pcc', 'scream', 'vivace']
+algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'pcc', 'sprout', 'vivace']
 
+# 4 6 12
 traces = ['ATT-LTE-driving', 'TMobile-LTE-driving', '12mbps']
 
 
@@ -59,9 +60,6 @@ def sum_all_flow(datas: {}, data_ts: {}):
     return sums
 
 
-loss_rates = []
-
-
 def load_detail(algo, trace, flows):
     with open(os.path.join('detail_log', '{}/{}/{}_datalink_detail.json'.format(trace, flows, algo))) as f:
         detail_data = json.load(f)
@@ -69,7 +67,6 @@ def load_detail(algo, trace, flows):
     ts = detail_data['egress_t']
     tput = detail_data['egress_tput']
     loss_rate = detail_data.get('loss', 0)
-    loss_rates.append(loss_rate)
     tput_res = sum_all_flow(tput, ts)
     delays = {}
     delay_ts = {}
@@ -87,30 +84,66 @@ def load_detail(algo, trace, flows):
     for i in range(min(len(delay_res), len(tput_res))):
         qoe[i] = utils.get_qoe(tput_res[i], delay_res[i], loss_rate)
 
-    return tput_res, delay_res, qoe
+    return tput_res, delay_res, qoe, loss_rate
 
 
-trace = traces[2]
-flow = 5
+for i in range(len(traces)):
+    trace = traces[i]
+    flow = 5
+    total_results = []
 
-data_flow1_step10_traceATT_model80 = RunData(sender_num=5, step_len_ms=10, trace=trace,
-                                             model_path='mfg')
-data_flow1_step10_traceATT_model80.process_data(data_flow1_step10_traceATT_model80.sum_flow_data)
-tput_lists = [data_flow1_step10_traceATT_model80.sum_flow_data.delivery_rate]
-delay_lists = [data_flow1_step10_traceATT_model80.sum_flow_data.delay]
-qoe_lists = [data_flow1_step10_traceATT_model80.sum_flow_data.reward]
+    frigg_flow_data = RunData(sender_num=1 if trace=='ATT-LTE-driving' else 5, step_len_ms=10, trace=trace,
+                              model_path='mfg')
+    frigg_flow_data.process_data(frigg_flow_data.sum_flow_data)
 
-for _, algo in enumerate(algos):
-    result = load_detail(algo, trace, flow)
-    tput_lists.append(result[0])
-    delay_lists.append(result[1])
-    qoe_lists.append(result[2])
+    tput_lists = [frigg_flow_data.sum_flow_data.delivery_rate]
+    delay_lists = [frigg_flow_data.sum_flow_data.delay]
+    qoe_lists = [frigg_flow_data.sum_flow_data.reward]
 
-algos.insert(0, 'mfg')
+    usages = [utils.get_usage(np.mean(frigg_flow_data.sum_flow_data.delivery_rate), trace)]
+    loss_rates = [frigg_flow_data.loss_rate]
 
-result_dir = 'plot_detail/{}/{}/'.format(trace, flow)
-if not os.path.exists(result_dir):
-    os.makedirs(result_dir)
-utils.draw_list(tput_lists, algos, y_label='tput', save_dir=os.path.join(result_dir, 'tput.png'))
-utils.draw_list(delay_lists, algos, y_label='delay', save_dir=os.path.join(result_dir, 'delay.png'))
-utils.draw_list(qoe_lists, algos, y_label='qoe', save_dir=os.path.join(result_dir, 'qoe.png'))
+    total_results.append([np.mean(tput_lists), np.mean(delay_lists), frigg_flow_data.loss_rate])
+
+    for _, algo in enumerate(algos):
+        result = load_detail(algo, trace, flow)
+        tput_lists.append(result[0])
+        delay_lists.append(result[1])
+        qoe_lists.append(result[2])
+
+        usages.append(utils.get_usage(np.mean(result[0]), trace))
+        loss_rates.append(result[3])
+
+        total_results.append([np.mean(result[0]), np.mean(result[1]), result[3]])
+
+    algos.insert(0, 'mfg')
+
+    result_dir = 'plot_detail/{}/{}/'.format(trace, flow)
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+
+    # 趋势图
+    # utils.draw_list(tput_lists, algos, y_label='Throughput', save_dir=os.path.join(result_dir, 'tput.png'))
+    # utils.draw_list(delay_lists, algos, y_label='Delay', save_dir=os.path.join(result_dir, 'delay.png'))
+    # utils.draw_list(qoe_lists, algos, y_label='QoE', save_dir=os.path.join(result_dir, 'qoe.png'))
+
+    # 点圆图
+    # utils.draw_elliptic(tput_lists, delay_lists, algos, save_dir=os.path.join(result_dir, 'elliptic.png'))
+
+    # 散点图
+    # utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
+
+    # 柱状QoE图
+    all_type_qoes = []
+    qoe_types = ['α=5_β=0.01_γ=100', 'α=10_β=0.01_γ=100', 'α=5_β=0.02_γ=100', 'α=5_β=0.01_γ=200']
+    for qoe_type in range(4):
+        cur_qoes = []
+        for _, metric_tuple in enumerate(total_results):
+            qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
+            cur_qoes.append(qoe_val)
+        all_type_qoes.append(cur_qoes)
+    utils.draw_histogram(all_type_qoes, qoe_types, 'Algos', algos, 'QoE',
+                         '{}_{}'.format('Qoe', trace),
+                         os.path.join(result_dir, '{}.png'.format('total_qoe')))
+
+    algos = algos[1:]

@@ -57,7 +57,7 @@ def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=F
         os.makedirs(result_dir)
 
     for y_label, data_list in results.items():
-        utils.histogram(data_list, algos_names, compare_type, compare_val_list, y_label,
+        utils.draw_histogram(data_list, algos_names, compare_type, compare_val_list, y_label,
                         '{}_{}'.format(y_label, trace),
                         os.path.join(result_dir, '{}.png'.format(y_label)) if save else None)
 

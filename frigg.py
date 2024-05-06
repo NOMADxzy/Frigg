@@ -19,7 +19,10 @@ class RunData:
         self.step_len_ms = step_len_ms
         self.trace = trace
         self.model_path = model_path
+
         self.loss_rate = None
+        self.tput = None
+        self.delay = None
 
         self.useage = []
 
@@ -46,6 +49,8 @@ class RunData:
                                                      self.step_len_ms, self.sender_num)
         tput, delay, loss, useage, reward = utils.read_summary(result_dir)
         self.loss_rate = loss
+        self.delay = delay
+        self.tput = tput
 
         metric_acc = [0 for _ in range(4)]
         metric_cnt = 0
@@ -54,7 +59,7 @@ class RunData:
             flow_data.seqs[i] += 3500
 
         first_ts = x_data[0]
-        for _ in range(utils.ms_to_bin(first_ts)):
+        for _ in range(utils.ms_to_bin(first_ts)):  # 前期补0
             new_seq.append(utils.next_seq(new_seq))
             new_delay.append(0)
             new_delivery_rate.append(0)
@@ -93,6 +98,16 @@ class RunData:
                 metric_acc[2] += flow_data.send_rate[i]
                 metric_acc[3] += flow_data.cwnd[i]
                 metric_cnt += 1
+
+        if self.trace == 'ATT-LTE-driving':
+            while utils.next_seq(new_seq) != config.bin_cnt + 2:
+                new_seq.append(utils.next_seq(new_seq))
+                new_delay.append(0)
+                new_delivery_rate.append(0)
+                new_send_rate.append(0)
+                new_cwnd.append(0)
+                new_loss.append(0)
+                new_reward.append(0)
 
         for i in range(len(new_seq)):
             new_seq[i] = new_seq[i] * self.ms_per_bin / 1000 # 转成秒单位，且初始有3s的偏移

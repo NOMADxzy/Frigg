@@ -6,24 +6,42 @@ import numpy as np
 from scipy.interpolate import interp1d
 import re
 import config
-
-####  figure 格式
-plt.rcParams['font.family'] = ['Arial']
-fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
-# 设置坐标标签字体大小
-ax.set_xlabel("Frame Rate(FPS)", fontsize=20)
-ax.set_ylabel(..., fontsize=20)
+from matplotlib.patches import Ellipse
 
 markers = ['o', 'x', '.', ',', 'v', '<', '>', '^', '1', '2', 'p']
+colors = ['red', 'blue', 'green', 'cyan', 'magenta', 'yellow', 'black', 'orange', 'purple']
+hatchs = ['x', '/' '+', '\\', '-', '.', '*', '|', ]
+histogram_colors = ['#000e4d', '#5c095e', '#9f055e', 'purple']
 
-def ms_to_bin(ts, first_ts=config.first_second*1000):
+algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'pcc', 'scream', 'vivace']
+algo_name_changes = {
+    'bbr': 'TCP BBR',
+    'cubic': 'TCP Cubic',
+    'fillp': 'FillP',
+    'fillp_sheep': 'FillP-Sheep',
+    'indigo': 'Indigo',
+    'pcc': 'PCC-Allegro',
+    'scream': 'SCReAM',
+    'vivace': 'PCC-Vivace',
+    'sprout': 'Sprout',
+    'mfg': 'Frigg',
+    'pcc_experimental': 'PCC-Expr',
+    'low_lstm_layer': 'Frigg w/o lstm',
+    'no_field': 'Frigg w/o sharing'
+}
+
+
+def ms_to_bin(ts, first_ts=config.first_second * 1000):
     return int((ts - first_ts) / config.ms_per_bin)
+
 
 def next_seq(seq):
     if len(seq) == 0:
         return 0
     else:
         return seq[-1] + 1
+
+
 def draw_list_simple(data_list, x_data=None, label="Data"):
     if x_data is None:
         x_data = np.arange(len(data_list))
@@ -40,16 +58,34 @@ def draw_list_simple(data_list, x_data=None, label="Data"):
     y_smooth = spline(x_fine)
 
     # 绘制结果
-    plt.scatter(x_data, y_data, label=label)
-    plt.plot(x_fine, y_smooth, label='Cubic Spline', color='red')
+    plt.scatter(x_data, y_data, label=algo_name_changes[label])
+    plt.plot(x_fine, y_smooth, label='Spline', color='red')
     plt.legend()
     plt.show()
 
 
-def get_qoe(tput, delay, loss):
+def get_qoe(tput, delay, loss, qoe_type=0):
+    tput_factor = 5
+    delay_penalty = 0.01
+    loss_penalty = 100
+
+    prefer_factor = 2
+
+    delay = min(float(delay), 5)
+    loss = min(float(loss), 0.2)
     # reward = float(tput) - 0.01 * float(delay) - 0.05 * float(loss)
-    reward = float(tput) - 0.005 * float(delay) - 100 * float(loss)
+    if qoe_type == 0:
+        reward = tput_factor * float(tput) - delay_penalty * float(delay) - loss_penalty * float(loss)
+    elif qoe_type == 1:
+        reward = prefer_factor * tput_factor * float(tput) - delay_penalty * float(delay) - loss_penalty * float(loss)
+    elif qoe_type == 2:
+        reward = tput_factor * float(tput) - prefer_factor * delay_penalty * float(delay) - loss_penalty * float(loss)
+    elif qoe_type == 3:
+        reward = tput_factor * float(tput) - delay_penalty * float(delay) - prefer_factor * loss_penalty * float(loss)
+    else:
+        raise ValueError
     return reward
+
 
 def read_summary(data_dir):
     # 打开并读取文件内容
@@ -77,6 +113,12 @@ def read_summary(data_dir):
     return float(tput), float(delay), float(loss), float(tput) / float(capacity), reward
 
 
+def get_usage(tput, trace):
+    result_dir = "./results/{}/{}/{}/{}/".format(trace, 'mfg',
+                                                 10, 5)
+    tmp_tput, _, _, useage, _ = read_summary(result_dir)
+    return tput / (tmp_tput / useage)
+
 def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_place=None):
     n_groups = len(data_list[0])
 
@@ -87,7 +129,7 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_pl
     # 绘制柱状图
     fig, ax = plt.subplots()
     for i, bar_data in enumerate(data_list):
-        ax.bar(index + i * bar_width, bar_data, bar_width, label=algo_names[i])
+        ax.bar(index + i * bar_width, bar_data, bar_width, label=algo_name_changes[algo_names[i]])
 
     # 添加标签、标题和图例
     ax.set_xlabel(xlabel)
@@ -103,13 +145,75 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_pl
         plt.show()
 
 
-def draw_list(y_lists, algos, y_label="data", save_dir=None):
+def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_place=None):
+    fig_width = 8
+    if len(x_variables) > 4:  # 是QoE对比图
+        fig_width = 18
+        x_variables = [algo_name_changes[x_variables[i]] for i in range(len(x_variables))]
+
+    ####  figure 格式
+    plt.rcParams['font.family'] = ['Arial']
+    fig, ax = plt.subplots(1, 1, figsize=(fig_width, 4.944), dpi=300)
+    # label字体
+    ax.set_xlabel(xlabel, fontsize=20)
+    ax.set_ylabel(..., fontsize=20)
+
+    x = np.arange(len(x_variables))
+
+    ax.tick_params(which='major', direction='in', length=5, width=1.5, labelsize=18, bottom=False)
+    ax.tick_params(axis='x', labelsize=18, bottom=False, labelrotation=0)  # labelrotation=0 标签倾斜角度
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(x_variables)
+    ax.set_ylabel(ylabel)  # Energy Consumption(Wh) Bitrate(Mbps) Delay(s)
+
+    ax.legend(markerscale=16, fontsize=24)
+    # 上下左右边框线宽
+    linewidth = 1.5
+    for spine in ['top', 'bottom', 'left', 'right']:
+        ax.spines[spine].set_linewidth(linewidth)
+
+    rects_list = []
+    index = np.arange(len(data_list[0]))
+    bar_width = 0.2  # 柱状图的宽度
+    for i, data in enumerate(data_list):
+        rects = ax.bar(index + i * bar_width - bar_width*1.5, data, bar_width, label=algo_names[i],
+                       edgecolor='lightgoldenrodyellow', linewidth=.8,
+                       color=histogram_colors[i % len(histogram_colors)],
+                       hatch=hatchs[i % len(hatchs)])
+        rects_list.append(rects)
+
+    for i in range(len(algo_names)):
+        if algo_names[i] in algo_name_changes:
+            algo_names[i] = algo_name_changes[algo_names[i]]
+    plt.legend(rects_list, algo_names, loc="best", fontsize="20", ncol=1)
+    fig.tight_layout()
+
+    # 显示图形
+    if save_place is not None:
+        plt.savefig(save_place)
+    else:
+        plt.show()
+
+
+def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None):
+    ####  figure 格式
+    plt.rcParams['font.family'] = ['Arial']
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
+    # label字体
+    ax.set_xlabel(..., fontsize=20)
+    ax.set_ylabel(..., fontsize=20)
+
     x_list = np.arange(0, 40, step=config.step_len)
+    if step_list is not None:
+        x_list = step_list
+
     for idx, y_list in enumerate(y_lists):
-        plt.plot(x_list[:len(y_list)], y_list, label=algos[idx], linewidth=2.5, marker=markers[idx % len(markers)],
+        plt.plot(x_list[:len(y_list)], y_list, label=algo_name_changes[algos[idx]], linewidth=2.5,
+                 marker=markers[idx % len(markers)],
                  markersize=8, linestyle='dashed')
 
-    plt.xlabel("time")
+    plt.xlabel("Time")
     plt.ylabel(y_label)
 
     plt.xticks(fontsize=18)
@@ -119,8 +223,9 @@ def draw_list(y_lists, algos, y_label="data", save_dir=None):
 
     if save_dir is not None:
         plt.savefig(save_dir, dpi=400, bbox_inches='tight')
+    else:
+        plt.show()
 
-    plt.show()
 
 def reduce_list(lst, new_length):
     """
@@ -133,6 +238,83 @@ def reduce_list(lst, new_length):
     num_segments = len(lst) // new_length
     reduced_list = []
     for i in range(new_length):
-        segment = lst[i*num_segments:(i+1)*num_segments]
+        segment = lst[i * num_segments:(i + 1) * num_segments]
         reduced_list.append(np.mean(segment))
     return reduced_list
+
+
+def confidence_ellipse(x, y, ax, n_std=2.0, facecolor='red', edgecolor='black', alpha=0.5, **kwargs):
+    if len(x) != len(y):
+        raise ValueError("x and y must be the same size")
+    cov = np.cov(x, y)
+    lambda_, v = np.linalg.eig(cov)
+    lambda_ = np.sqrt(lambda_)
+
+    ellipse = Ellipse(xy=(np.mean(x), np.mean(y)),
+                      width=lambda_[0] * n_std * 2, height=lambda_[1] * n_std * 2,
+                      angle=np.rad2deg(np.arccos(v[0, 0])),
+                      edgecolor=edgecolor, facecolor=facecolor, alpha=alpha, **kwargs)
+    ax.add_patch(ellipse)
+
+
+def draw_elliptic(tput_lists, delay_lists, algo_lists, save_dir=None):
+    ####  figure 格式
+    plt.rcParams['font.family'] = ['Arial']
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
+    # label字体
+    ax.set_xlabel("RTT(ms)", fontsize=20)
+    ax.set_ylabel("Throughput(Mbps)", fontsize=20)
+
+    algo_cnts = len(algo_lists)
+    for i in range(algo_cnts):
+        tputs = tput_lists[i]
+        delays = delay_lists[i]
+        min_size = min(len(tputs), len(delays))
+        algo = algo_lists[i]
+
+        # # 绘制置信椭圆
+        # confidence_ellipse(delays[:min_size], tputs[:min_size], ax, n_std=2, facecolor=colors[i % len(colors)],
+        #                    edgecolor='red', alpha=0.5)
+        # 用三角形标注平均值
+        mean_y, mean_x = np.mean(tputs), np.mean(delays)
+        ax.scatter(mean_x, mean_y, color=colors[i % len(colors)], marker=markers[i % len(markers)], s=100,
+                   label=algo_name_changes[algo])
+        plt.legend(fontsize=5)
+
+    # 设置坐标标签字体大小
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.legend(loc="best", fontsize="16", ncol=3)
+    fig.tight_layout()
+
+
+def draw_scatter(usages, loss_rates, algo_lists, save_dir=None):
+    ####  figure 格式
+    plt.rcParams['font.family'] = ['Arial']
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
+    # label字体
+    ax.set_xlabel("LossRates", fontsize=20)
+    ax.set_ylabel("Usage", fontsize=20)
+
+    algo_cnts = len(algo_lists)
+    for i in range(algo_cnts):
+        algo = algo_lists[i]
+        ax.scatter(loss_rates[i], usages[i], color=colors[i % len(colors)], marker=markers[i % len(markers)], s=100,
+                   label=algo_name_changes[algo])
+        plt.legend(fontsize=5)
+
+    # 设置坐标标签字体大小
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.legend(loc="best", fontsize="16", ncol=3)
+    fig.tight_layout()
+
+    if save_dir is not None:
+        plt.savefig(save_dir, dpi=400, bbox_inches='tight')
+    else:
+        plt.show()
+
+    if save_dir is not None:
+        plt.savefig(save_dir, dpi=400, bbox_inches='tight')
+    else:
+        plt.show()

@@ -11,7 +11,7 @@ def get_train_data(log_file_path):
     rewards = []
 
     for event in reward_events:
-        steps.append(event.step)
+        steps.append(event.step*100)
         rewards.append(event.value)
 
     return steps, rewards
@@ -22,5 +22,6 @@ low_lstm_steps, low_lstm_rewards = get_train_data('train_log/events.out.tfevents
 
 step_len = min(len(mfg_steps), len(low_lstm_steps))
 
-utils.draw_list([mfg_rewards[:step_len], low_lstm_rewards[:step_len]], mfg_steps[:step_len],
-                "reward", save_dir='plot_train/train_epoch_reward.png')
+utils.draw_list([mfg_rewards[:step_len], low_lstm_rewards[:step_len]], algos=['mfg', 'low_lstm_layer'],
+                step_list=mfg_steps[:step_len],
+                save_dir='plot_train/train_epoch_reward.png')
