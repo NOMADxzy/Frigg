@@ -25,11 +25,11 @@ def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=F
     if compare_val_list is None:
         compare_val_list = all_compare_datas[compare_type]
     results = {
-        'tput': [[] for _ in range(algos_cnt)],
-        'delay': [[] for _ in range(algos_cnt)],
-        'loss': [[] for _ in range(algos_cnt)],
-        'useage': [[] for _ in range(algos_cnt)],
-        'reward': [[] for _ in range(algos_cnt)]
+        'Throughput': [[] for _ in range(algos_cnt)],
+        'Delay': [[] for _ in range(algos_cnt)],
+        'Loss': [[] for _ in range(algos_cnt)],
+        'Bandwidth Utilization': [[] for _ in range(algos_cnt)],
+        'Utility': [[] for _ in range(algos_cnt)]
     }
     step_len_ms, flows = 10, 5  # 默认值
 
@@ -46,12 +46,12 @@ def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=F
 
             result_dir = "./results/{}/{}/{}/{}/".format(trace, model_name,
                                                          step_len_ms, flows)
-            tput, delay, loss, useage, reward = utils.read_summary(result_dir)
-            results['tput'][i].append(tput)
-            results['delay'][i].append(delay)
-            results['loss'][i].append(loss)
-            results['useage'][i].append(useage)
-            results['reward'][i].append(reward)
+            tput, delay, loss, useage, reward = utils.read_summary(result_dir, qoe_type=3 if compare_type == 'step_len_ms' else 0)
+            results['Throughput'][i].append(tput)
+            results['Delay'][i].append(delay)
+            results['Loss'][i].append(loss)
+            results['Bandwidth Utilization'][i].append(useage)
+            results['Utility'][i].append(reward)
 
     result_dir = os.path.join('plot_compare', trace, compare_type)
     if save and not os.path.exists(result_dir):

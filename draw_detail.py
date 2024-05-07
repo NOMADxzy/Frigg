@@ -50,16 +50,6 @@ def process_delay(delay: [], x_data: []):
     return new_seq, new_delay
 
 
-def sum_all_flow(datas: {}, data_ts: {}):
-    sums = config.get_initial_val_list()
-    for flow_id, data in datas.items():
-        data_t = data_ts[flow_id]
-        for i, val in enumerate(data):
-            idx = utils.ms_to_bin(data_t[i] * 1000)
-            sums[idx] += val
-    return sums
-
-
 def load_detail(algo, trace, flows):
     with open(os.path.join('detail_log', '{}/{}/{}_datalink_detail.json'.format(trace, flows, algo))) as f:
         detail_data = json.load(f)
@@ -67,7 +57,7 @@ def load_detail(algo, trace, flows):
     ts = detail_data['egress_t']
     tput = detail_data['egress_tput']
     loss_rate = detail_data.get('loss', 0)
-    tput_res = sum_all_flow(tput, ts)
+    tput_res = utils.sum_all_flow(tput, ts)
     delays = {}
     delay_ts = {}
     delay_cnt = 0
@@ -76,7 +66,7 @@ def load_detail(algo, trace, flows):
         delays[flow_id] = tmp_delay
         delay_ts[flow_id] = tmp_t
         delay_cnt += 1
-    delay_res = sum_all_flow(delays, delay_ts)
+    delay_res = utils.sum_all_flow(delays, delay_ts)
     for i in range(len(delay_res)):
         delay_res[i] /= delay_cnt
 
@@ -124,25 +114,25 @@ for i in range(len(traces)):
     # 趋势图
     # utils.draw_list(tput_lists, algos, y_label='Throughput', save_dir=os.path.join(result_dir, 'tput.png'))
     # utils.draw_list(delay_lists, algos, y_label='Delay', save_dir=os.path.join(result_dir, 'delay.png'))
-    # utils.draw_list(qoe_lists, algos, y_label='QoE', save_dir=os.path.join(result_dir, 'qoe.png'))
+    utils.draw_list(qoe_lists, algos, y_label='Utility', save_dir=os.path.join(result_dir, 'qoe.png'))
 
     # 点圆图
     # utils.draw_elliptic(tput_lists, delay_lists, algos, save_dir=os.path.join(result_dir, 'elliptic.png'))
 
     # 散点图
-    utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
+    # utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
 
     # 柱状QoE图
-    all_type_qoes = []
-    qoe_types = ['α=5,β=0.01,λ=100', 'α=10,β=0.01,λ=100', 'α=5,β=0.02,λ=100', 'α=5,β=0.01,λ=200']
-    for qoe_type in range(4):
-        cur_qoes = []
-        for _, metric_tuple in enumerate(total_results):
-            qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
-            cur_qoes.append(qoe_val)
-        all_type_qoes.append(cur_qoes)
-    utils.draw_histogram(all_type_qoes, qoe_types, 'Algos', algos, 'Utility',
-                         '{}_{}'.format('Qoe', trace),
-                         os.path.join(result_dir, '{}.png'.format('total_qoe')))
+    # all_type_qoes = []
+    # qoe_types = ['α=5,β=0.01,λ=100', 'α=10,β=0.01,λ=100', 'α=5,β=0.02,λ=100', 'α=5,β=0.01,λ=200']
+    # for qoe_type in range(4):
+    #     cur_qoes = []
+    #     for _, metric_tuple in enumerate(total_results):
+    #         qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
+    #         cur_qoes.append(qoe_val)
+    #     all_type_qoes.append(cur_qoes)
+    # utils.draw_histogram(all_type_qoes, qoe_types, None, algos, 'Utility',
+    #                      '{}_{}'.format('Qoe', trace),
+    #                      os.path.join(result_dir, '{}.png'.format('total_qoe')))
 
     algos = algos[1:]

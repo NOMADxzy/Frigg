@@ -27,7 +27,9 @@ algo_name_changes = {
     'mfg': 'Frigg',
     'pcc_experimental': 'PCC-Expr',
     'low_lstm_layer': 'Frigg w/o lstm',
-    'no_field': 'Frigg w/o sharing'
+    'no_field': 'Frigg w/o sharing',
+    'flows': 'Flows',
+    'step_len_ms': 'Frequency(ms)'
 }
 
 
@@ -66,13 +68,17 @@ def draw_list_simple(data_list, x_data=None, label="Data"):
 
 def get_qoe(tput, delay, loss, qoe_type=0):
     tput_factor = 5
-    delay_penalty = 0.5
-    loss_penalty = 100
 
-    prefer_factor = 2
+    delay_penalty = 0.005
+    delay = min(float(delay), 5000)
 
-    delay = min(float(delay), 5)
-    loss = min(float(loss), 0.2)
+    # delay_penalty = 0.01
+    # delay = min(float(delay), 500)
+
+    loss_penalty = 500
+    loss = min(float(loss), 0.05)
+
+    prefer_factor = 3
     # reward = float(tput) - 0.01 * float(delay) - 0.05 * float(loss)
     if qoe_type == 0:
         reward = tput_factor * float(tput) - delay_penalty * float(delay) - loss_penalty * float(loss)
@@ -84,10 +90,23 @@ def get_qoe(tput, delay, loss, qoe_type=0):
         reward = tput_factor * float(tput) - delay_penalty * float(delay) - prefer_factor * loss_penalty * float(loss)
     else:
         raise ValueError
+
+    # reward += 50
+    # reward /= 5
     return reward
 
 
-def read_summary(data_dir):
+def sum_all_flow(datas: {}, data_ts: {}):
+    sums = config.get_initial_val_list()
+    for flow_id, data in datas.items():
+        data_t = data_ts[flow_id]
+        for i, val in enumerate(data):
+            idx = ms_to_bin(data_t[i] * 1000)
+            sums[idx] += val
+    return sums
+
+
+def read_summary(data_dir, qoe_type=0):
     # 打开并读取文件内容
     with open(os.path.join(data_dir, 'indigo_a3c_test_stats_run1.log'), 'r') as file:
         data = file.read()
@@ -109,7 +128,7 @@ def read_summary(data_dir):
     if delay_95th_percentile_match:
         delay = delay_95th_percentile_match.group(1)
 
-    reward = get_qoe(tput, delay, loss)
+    reward = get_qoe(tput, delay, loss, qoe_type=qoe_type)
     return float(tput), float(delay), float(loss), float(tput) / float(capacity), reward
 
 
@@ -148,15 +167,17 @@ def histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_pl
 
 def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, save_place=None):
     fig_width = 8
+    ncol = None
     if len(x_variables) > 4:  # 是QoE对比图
         fig_width = 18
         x_variables = [algo_name_changes[x_variables[i]] for i in range(len(x_variables))]
-
+        ncol = 4
     ####  figure 格式
     plt.rcParams['font.family'] = ['Arial']
     fig, ax = plt.subplots(1, 1, figsize=(fig_width, 4.944), dpi=300)
     # label字体
-    ax.set_xlabel(xlabel, fontsize=20)
+    if xlabel is not None:
+        ax.set_xlabel(algo_name_changes.get(xlabel, xlabel), fontsize=20)
     ax.set_ylabel(..., fontsize=20)
 
     x = np.arange(len(x_variables))
@@ -168,7 +189,10 @@ def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, sa
     ax.set_xticklabels(x_variables)
     ax.set_ylabel(ylabel)  # Energy Consumption(Wh) Bitrate(Mbps) Delay(s)
 
-    ax.legend(markerscale=16, fontsize=24)
+    if ncol is not None:
+        ax.legend(markerscale=16, fontsize=24, ncol=ncol)
+    else:
+        ax.legend(markerscale=16, fontsize=24)
     # 上下左右边框线宽
     linewidth = 1.5
     for spine in ['top', 'bottom', 'left', 'right']:
@@ -197,7 +221,7 @@ def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, sa
         plt.show()
 
 
-def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None):
+def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None, ncol=3):
     ####  figure 格式
     plt.rcParams['font.family'] = ['Arial']
     fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
@@ -210,16 +234,18 @@ def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None):
         x_list = step_list
 
     for idx, y_list in enumerate(y_lists):
+        if len(y_list) > len(x_list):
+            y_list = y_list[:len(x_list)]
         plt.plot(x_list[:len(y_list)], y_list, label=algo_name_changes.get(algos[idx], algos[idx]), linewidth=2.5,
                  marker=markers[idx % len(markers)],
                  markersize=8, linestyle='dashed')
 
-    plt.xlabel("Time")
+    plt.xlabel("Time(s)")
     plt.ylabel(y_label)
 
     plt.xticks(fontsize=18)
     plt.yticks(fontsize=18)
-    plt.legend(loc="best", fontsize="16", ncol=3)
+    plt.legend(loc="best", fontsize="16", ncol=ncol)
     fig.tight_layout()
 
     if save_dir is not None:

@@ -23,8 +23,9 @@ class RunData:
         self.loss_rate = None
         self.tput = None
         self.delay = None
+        self.useage = None
 
-        self.useage = []
+        self.useages = []
 
         # 本次运行的带宽情况
         self.ori_bandwidth = None
@@ -137,6 +138,7 @@ class RunData:
         self.loss_rate = loss
         self.delay = delay
         self.tput = tput
+        self.useage = useage
 
         if load_band:
             # 加载实时带宽情况
@@ -153,12 +155,12 @@ class RunData:
         bw /= 2
         return bw
 
-    def compute_useage(self):
+    def compute_useages(self):
         for i in range(len(self.sum_flow_data.seqs)):
             seq, cur_bw = self.sum_flow_data.seqs[i], self.sum_flow_data.delivery_rate[i]
             if seq >= self.ori_seq[-1]:
                 break
             bw = self.get_ori_band_width(seq)
-            self.useage.append(min(1.0, cur_bw / bw))
+            self.useages.append(min(1.0, cur_bw / bw))
 
 
