@@ -20,9 +20,10 @@ def load_tputs(algo, trace, flows):
 
 
 # traces = ['ATT-LTE-driving', 'TMobile-LTE-driving', '12mbps']
-traces = ['12mbps']
-flows = [2, 4, 6, 8]
-algos = ['mfg', 'cubic', 'pcc', 'sprout']
+# traces = ['12mbps']
+traces = ['TMobile-LTE-driving']
+# traces = ['ATT-LTE-driving']
+algos = ['cubic', 'pcc', 'sprout', 'indigo']
 
 total_results = {
     'Bandwidth Utilization': [[] for _ in range(len(algos))],
@@ -30,40 +31,48 @@ total_results = {
     'Loss': [[] for _ in range(len(algos))],
     'Utility': [[] for _ in range(len(algos))],
 }
+
+flows = [2, 4, 6, 8]  # 间隔2
+# flows = [3, 5, 7, 9]  # 间隔0
+
 for i in range(len(traces)):
     trace = traces[i]
+    if flows[0] % 2 == 0:  # 偶数是依次启动的
+        interval = 2
+    else:
+        interval = 0
+    type_dir = 'one_by_one' if interval > 0 else 'together'
     for _, flow in enumerate(flows):
         for j, algo in enumerate(algos):
-
             tput_lists = []
             loss_rate = 0
             useage = 0
 
             if algo == 'mfg':
                 frigg_flow_data = RunData(sender_num=flow, step_len_ms=10, trace=trace,
-                                          model_path='mfg', start_interval=4)
+                                          model_path='mfg', start_interval=interval)
                 for flow_data in frigg_flow_data.flow_datas:
                     tput_lists.append(flow_data.delivery_rate)
                 loss_rate = frigg_flow_data.loss_rate
-                delay =frigg_flow_data.delay
+                delay = frigg_flow_data.delay
                 useage = frigg_flow_data.useage
             else:
                 tput_lists, useage, delay, loss_rate = load_tputs(algo, trace, flow)
-            reward = utils.get_qoe(useage*10, delay, loss_rate)
+            reward = utils.get_qoe(useage * 10, delay, loss_rate)
 
             total_results['Bandwidth Utilization'][j].append(useage)
             total_results['Delay'][j].append(delay)
             total_results['Loss'][j].append(loss_rate)
             total_results['Utility'][j].append(reward)
 
-            result_dir = "./plot_interval/{}/{}/{}".format(trace, algo, flow)
+            result_dir = "./plot_interval/{}/{}/{}/{}".format(type_dir, trace, algo, flow)
             if not os.path.exists(result_dir):
                 os.makedirs(result_dir)
             # 趋势图
             utils.draw_list(tput_lists, algos=['Flow {}'.format(i) for i in range(flow)], y_label='Throughput(Mbps)',
                             save_dir=os.path.join(result_dir, 'tput.png'), ncol=2)
 
-    result_dir = "./plot_interval/{}".format(trace)
+    result_dir = "./plot_interval/{}/{}".format(type_dir, trace)
     for y_label, data_list in total_results.items():
         utils.draw_histogram(data_list, algos, 'flows', flows, y_label,
                              '{}_{}'.format(y_label, trace),

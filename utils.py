@@ -221,7 +221,7 @@ def draw_histogram(data_list, algo_names, xlabel, x_variables, ylabel, title, sa
         plt.show()
 
 
-def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None, ncol=3):
+def draw_list(y_lists, algos, step_list=None, y_label="data", x_lable=None, save_dir=None, ncol=3):
     ####  figure 格式
     plt.rcParams['font.family'] = ['Arial']
     fig, ax = plt.subplots(1, 1, figsize=(8, 4.944), dpi=300)
@@ -240,7 +240,7 @@ def draw_list(y_lists, algos, step_list=None, y_label="data", save_dir=None, nco
                  marker=markers[idx % len(markers)],
                  markersize=8, linestyle='dashed')
 
-    plt.xlabel("Time(s)")
+    plt.xlabel("Time(s)" if x_lable is None else x_lable)
     plt.ylabel(y_label)
 
     plt.xticks(fontsize=18)
