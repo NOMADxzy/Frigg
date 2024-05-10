@@ -132,7 +132,7 @@ class RunData:
                     self.sum_flow_data.delay[i] /= self.sender_num
 
         # 加载总体metric
-        result_dir = "./results/{}/{}/{}/{}/".format(self.trace, self.model_path,
+        result_dir = "./pantheon results/{}/{}/{}/{}/".format(self.trace, self.model_path,
                                                      self.step_len_ms, self.sender_num)
         tput, delay, loss, useage, reward = utils.read_summary(result_dir)
         self.loss_rate = loss

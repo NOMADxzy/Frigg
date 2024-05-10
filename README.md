@@ -1,26 +1,40 @@
-# A3C Indigo: Deep Reinforcement Learning in Congestion Control
-## Overview
-This is a work that completes the a3c implementation of Indigo based on the original codes offered in [StanfordSNR/indigo](https://github.com/StanfordSNR/indigo)
+# Frigg: Multi-Flow Congestion Control with Mean Distribution Information in Bottleneck Link of Heterogeneous Network
 
-## Running on Pantheon
-Make sure your environment is Python 2.7 and tensorflow 1.12.0. Replace the thirdparty/indigo folder in the [StanfordSNR/Pantheon](https://github.com/StanfordSNR/pantheon) with this repo.
+## Introduce
+The current heterogeneous network environment is complex
+and changeable, and the interaction and competition between
+flows in the bottleneck link affect the actual throughput. We
+expect to explore the impact of data flow information on the
+bandwidth utilization of bottleneck links. Further, we propose
+a flexible congestion control strategy Frigg, utilizing shared
+flow mean distribution information. It learns the strategy according to the shared information from other flows on the
+bottleneck link to accurately adjust the congestion window
+size for each flow without making changes in the in-network
+routing, so that the overall rate matches the pipeline capacity.
 
-There is already a pre-trained model included under a3c/logs, to test without training, run ```src/experiments/test.py local --schemes a3c --data-dir DIR ```. And then run ```src/analysis/analyze.py --data-dir DIR``` for analysis result. 
+![](plot_train/system.png)
 
-For more detailed usage, run ```src/experiments/test.py local -h```.
+## Test Result
 
-To train a new model, go to thirdparty/indigo/a3c and run ```python train.py --ps-hosts 127.0.0.1:9000 --worker-hosts 127.0.0.1:8000 --username YOUR USER-NAME --rlcc-dir /pantheon/third party/indigo```. After training, copy all the model files under logs/TRAINING_TIME into logs and delete the original model files under logs.
+1. draw_train.py -> plot_train
+![](plot_train/train_epoch_reward.png)
 
-## Modified Files
-The main model file for A3C algorithm is thirdparty/indigo/a3c/models.py, where you can change the network settings such as the number of layers and the number of LSTM cells.
+2. draw_compare.py -> plot_compare
+![](plot_compare/ATT-LTE-driving/flows/Throughput.png)
+![](plot_compare/ATT-LTE-driving/flows/Loss.png)
+![](plot_compare/ATT-LTE-driving/flows/Delay.png)
+![](plot_compare/ATT-LTE-driving/flows/Utility.png)
 
-thirdparty/indigo/a3c/a3c.py is the training file for a3c algorithm. Related training settings like learning rate, max training epoch and other things can be modified according to your own need in this file.
+3. draw_detail.py -> plot_detail
+![](plot_detail/ATT-LTE-driving/5/delay.png)
+![](plot_detail/ATT-LTE-driving/5/tput.png)
+![](plot_detail/ATT-LTE-driving/5/usage.png)
+![](plot_detail/ATT-LTE-driving/5/qoe.png)
+![](plot_detail/ATT-LTE-driving/5/elliptic.png)
 
-To modify the settings of the DRL formulation, such as the state, action and rewards, go to indigo/env/sender.py. State is defined in ```recv()```, rewards is defined in ```compute_perfomance()``` and actions are defined at the beginning of ```Class Sender```.
+4. draw_interval_start.py -> plot_interval
+![](plot_interval/one_by_one/12mbps/cubic/6/tput.png)
+![](plot_interval/one_by_one/12mbps/mfg/4/tput.png)
 
-## Performance
-The A3C version of Indigo (notified as a3c in the figures) is tested on Pantheon, compared to the DAgger version of Indigo (notified as Indigo in the figures).
-
-![5 Runs](https://github.com/caoshiyi/a3c_indigo/blob/master/performance/pantheon_summary.png?raw=true)
-
-![5 Runs Mean](https://github.com/caoshiyi/a3c_indigo/blob/master/performance/pantheon_summary_mean.png?raw=true)
+5. pantheon results —— use pantheon origin plot results
+![](results/ATT-LTE-driving/mfg/10/1/indigo_a3c_test_datalink_throughput_run1.png)

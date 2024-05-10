@@ -133,7 +133,7 @@ def read_summary(data_dir, qoe_type=0):
 
 
 def get_usage(tput, trace):
-    result_dir = "./results/{}/{}/{}/{}/".format(trace, 'mfg',
+    result_dir = "./pantheon results/{}/{}/{}/{}/".format(trace, 'mfg',
                                                  10, 5)
     tmp_tput, _, _, useage, _ = read_summary(result_dir)
     return tput / (tmp_tput / useage)

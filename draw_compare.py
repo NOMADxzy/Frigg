@@ -44,7 +44,7 @@ def compare(compare_type, compare_val_list=None, trace='ATT-LTE-driving', save=F
             else:
                 raise ValueError('Unknown comparison type')
 
-            result_dir = "./results/{}/{}/{}/{}/".format(trace, model_name,
+            result_dir = "./pantheon results/{}/{}/{}/{}/".format(trace, model_name,
                                                          step_len_ms, flows)
             tput, delay, loss, useage, reward = utils.read_summary(result_dir, qoe_type=3 if compare_type == 'step_len_ms' else 0)
             results['Throughput'][i].append(tput)
