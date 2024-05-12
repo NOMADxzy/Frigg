@@ -7,9 +7,6 @@ import json
 from frigg import RunData
 import config
 
-# def combine(t_dict:{}, flows_dict):
-# list_len = min([len(t_list) for t_list in t_dict.values()])
-
 # algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'ledbat', 'pcc', 'pcc_experimental', 'scream', 'sprout', 'verus', 'vivace']
 algos = ['bbr', 'cubic', 'fillp', 'fillp_sheep', 'indigo', 'pcc', 'sprout', 'vivace']
 
@@ -112,27 +109,27 @@ for i in range(len(traces)):
         os.makedirs(result_dir)
 
     # 趋势图
-    # utils.draw_list(tput_lists, algos, y_label='Throughput', save_dir=os.path.join(result_dir, 'tput.png'))
-    # utils.draw_list(delay_lists, algos, y_label='Delay', save_dir=os.path.join(result_dir, 'delay.png'))
+    utils.draw_list(tput_lists, algos, y_label='Throughput', save_dir=os.path.join(result_dir, 'tput.png'))
+    utils.draw_list(delay_lists, algos, y_label='Delay', save_dir=os.path.join(result_dir, 'delay.png'))
     utils.draw_list(qoe_lists, algos, y_label='Utility', save_dir=os.path.join(result_dir, 'qoe.png'))
 
     # 点圆图
-    # utils.draw_elliptic(tput_lists, delay_lists, algos, save_dir=os.path.join(result_dir, 'elliptic.png'))
+    utils.draw_elliptic(tput_lists, delay_lists, algos, save_dir=os.path.join(result_dir, 'elliptic.png'))
 
     # 散点图
-    # utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
+    utils.draw_scatter(usages, loss_rates, algos, save_dir=os.path.join(result_dir, 'usage.png'))
 
     # 柱状QoE图
-    # all_type_qoes = []
-    # qoe_types = ['α=5,β=0.01,λ=100', 'α=10,β=0.01,λ=100', 'α=5,β=0.02,λ=100', 'α=5,β=0.01,λ=200']
-    # for qoe_type in range(4):
-    #     cur_qoes = []
-    #     for _, metric_tuple in enumerate(total_results):
-    #         qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
-    #         cur_qoes.append(qoe_val)
-    #     all_type_qoes.append(cur_qoes)
-    # utils.draw_histogram(all_type_qoes, qoe_types, None, algos, 'Utility',
-    #                      '{}_{}'.format('Qoe', trace),
-    #                      os.path.join(result_dir, '{}.png'.format('total_qoe')))
+    all_type_qoes = []
+    qoe_types = ['α=5,β=0.01,λ=100', 'α=10,β=0.01,λ=100', 'α=5,β=0.02,λ=100', 'α=5,β=0.01,λ=200']
+    for qoe_type in range(4):
+        cur_qoes = []
+        for _, metric_tuple in enumerate(total_results):
+            qoe_val = utils.get_qoe(metric_tuple[0], metric_tuple[1], metric_tuple[2], qoe_type=qoe_type)
+            cur_qoes.append(qoe_val)
+        all_type_qoes.append(cur_qoes)
+    utils.draw_histogram(all_type_qoes, qoe_types, None, algos, 'Utility',
+                         '{}_{}'.format('Qoe', trace),
+                         os.path.join(result_dir, '{}.png'.format('total_qoe')))
 
     algos = algos[1:]
