@@ -91,7 +91,7 @@ def multi_main():
     flows = config_data['flows']
     max_cwnds = config_data.get('max_cwnds', [INF_CWND for _ in range(flows)])
     if len(max_cwnds) < flows:
-        max_cwnds.extend([INF_CWND]*(flows-len(max_cwnds))) # 后面的默认不限速
+        max_cwnds.extend([INF_CWND]*(flows-len(max_cwnds)))
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
     model_name = config_data['model_name']
