@@ -49,7 +49,7 @@ class Sender(object):
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0):
+                 meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0, max_cwnd=MAX_CWND):
         self.sample_action = None
         self.train = train
         self.port = port
@@ -62,6 +62,7 @@ class Sender(object):
         self.state_dim = state_dim  # TODO 更改维度
         self.is_mfg = self.model_name == 'mfg'
         self.wait_second = wait_second
+        self.max_cwnd = max_cwnd
 
         self.fix_window = 40
         self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
@@ -223,7 +224,8 @@ class Sender(object):
         op, val = self.action_mapping[action_idx]
 
         self.cwnd = apply_op(op, self.cwnd, val)
-        self.cwnd = min(max(MIN_CWND, self.cwnd), MAX_CWND)
+        target_cwnd = min(max(MIN_CWND, self.cwnd), self.max_cwnd)
+        self.cwnd = target_cwnd
 
     def set_cwnd(self, cwnd):
         self.cwnd = cwnd

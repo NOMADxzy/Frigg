@@ -11,6 +11,7 @@ from concurrent import futures
 from env.global_state import GlobalState
 import yaml
 
+INF_CWND = 10000
 
 class Learner(object):
     def __init__(self, state_dim, action_cnt, restore_vars, lstm_layers=2):
@@ -88,6 +89,9 @@ def multi_main():
     with open('config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
     flows = config_data['flows']
+    max_cwnds = config_data.get('max_cwnds', [INF_CWND for _ in range(flows)])
+    if len(max_cwnds) < flows:
+        max_cwnds.extend([INF_CWND]*(flows-len(max_cwnds))) # 后面的默认不限速
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
     model_name = config_data['model_name']
@@ -114,7 +118,7 @@ def multi_main():
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
                         step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
-                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval)
+                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_cwnd=max_cwnds[i])
         sender.set_sample_action(learner.sample_action)
         senders.append(sender)
 
