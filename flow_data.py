@@ -1,8 +1,9 @@
 import os
 
 class FlowData:
-    def __init__(self, data_file=None, id=0):
+    def __init__(self, data_file=None, id=0, p_dir='pantheon results/detail'):
         self.id = id
+        self.p_dir = p_dir
         self.delay = []
         self.delivery_rate = []
         self.send_rate = []
@@ -21,7 +22,7 @@ class FlowData:
         self.load_data()
 
     def load_data(self):
-        with open(os.path.join('pantheon results/detail', self.data_file), 'r') as f:
+        with open(os.path.join(self.p_dir, self.data_file), 'r') as f:
             row_id = -1
             for line in f:
                 row_id += 1

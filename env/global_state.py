@@ -51,7 +51,7 @@ class GlobalState:
 
             input_state = self.overly(state[:4])
 
-            return input_state + [e / self.client_num for e in self.cwnd_distributions]
+            return input_state + [e / self.client_num for e in self.cwnd_distributions] + [self.client_num]
 
     def update_states(self, state):
         port = state[4]

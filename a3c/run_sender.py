@@ -12,6 +12,7 @@ from env.global_state import GlobalState
 import yaml
 
 INF_CWND = 10000
+TOTAL_BW = 12
 
 class Learner(object):
     def __init__(self, state_dim, action_cnt, restore_vars, lstm_layers=2):
@@ -52,6 +53,25 @@ class Learner(object):
         # action = np.argmax(np.random.multinomial(1, action_probs[0] - 1e-5))
         # self.lstm_state = lstm_state_out
         return action
+
+    def programming_action(self, state):
+        send_rate_ewma = state[2]
+        client_num = state[-1]
+        total_bw = TOTAL_BW
+
+        action = 2
+        x = send_rate_ewma / (total_bw/client_num) - 1
+        if x < -0.2:
+            action += 2
+        elif x < -0.05 :
+            action += 1
+        elif x > 0.05:
+            action -= 1
+        elif x > 0.2:
+            action -= 2
+
+        return action
+
 
 
 def main():
@@ -98,7 +118,7 @@ def multi_main():
     trace = config_data['trace']
 
     model_name_dict = {'mfg': 'checkpoint-80', 'no_field': 'model', 'low_lstm_layer': 'checkpoint-160',
-                       'indigo': 'model'}
+                       'indigo': 'model', 'dynamic_programming': 'model'}
     state_dim = 7 if model_name == 'mfg' else 4
 
     #  shared things
@@ -120,6 +140,7 @@ def multi_main():
                         step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
                         model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_cwnd=max_cwnds[i])
         sender.set_sample_action(learner.sample_action)
+        sender.set_programming_action(learner.programming_action)
         senders.append(sender)
 
     for sender in senders:

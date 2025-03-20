@@ -51,6 +51,7 @@ class Sender(object):
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
                  meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0, max_cwnd=MAX_CWND):
         self.sample_action = None
+        self.programming_action = None
         self.train = train
         self.port = port
         self.id = id
@@ -176,6 +177,11 @@ class Sender(object):
         """Set the policy. Must be called before run()."""
 
         self.sample_action = sample_action
+
+    def set_programming_action(self, programming_action):
+        """Set the policy. Must be called before run()."""
+
+        self.programming_action = programming_action
 
     def update_state(self, ack):
         """ Update the state variables listed in __init__() """
@@ -342,6 +348,12 @@ class Sender(object):
                         else:
                             action = self.sample_action(state[:self.state_dim])
                         self.take_action(min(action, 3))
+                elif self.model_name == 'dynamic_programming':
+                    input_state = self.global_state.get_input_state(cur_state)
+                    action = self.programming_action(input_state)
+                    self.take_action(action)
+                else:
+                    raise ValueError
 
 
                         # 统计

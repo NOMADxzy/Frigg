@@ -11,7 +11,7 @@ import utils,config
 
 # 记录一次运行中所有流的表现情况
 class RunData:
-    def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path='', start_interval=0):
+    def __init__(self, sender_num=5, step_len_ms=10, trace='', model_path='', start_interval=0, p_dir='pantheon results/detail'):
         self.flow_datas = []
         self.sum_flow_data = FlowData()
 
@@ -33,6 +33,7 @@ class RunData:
 
         # 绘图参数
         self.ms_per_bin = config.ms_per_bin  # ms
+        self.p_dir = p_dir
 
         self.load_data()
 
@@ -125,9 +126,9 @@ class RunData:
         template = 'data@{}&step_len_ms@{}&sender_num@{}&trace@{}&model_path@{}{}.csv'
         for i in range(self.sender_num):
             data_file = template.format(i, self.step_len_ms, self.sender_num, self.trace, self.model_path, '')
-            self.flow_datas.append(FlowData(data_file, id=i))
+            self.flow_datas.append(FlowData(data_file, id=i, p_dir=self.p_dir))
             if i == 0:
-                self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv')
+                self.sum_flow_data = FlowData(data_file[:-4] + '&global.csv', p_dir=self.p_dir)
                 for i in range(len(self.sum_flow_data.delay)):
                     self.sum_flow_data.delay[i] /= self.sender_num
 
@@ -145,7 +146,7 @@ class RunData:
             tail = "&fix_window_{}".format(40)
             data_file = template.format(0, self.step_len_ms, self.sender_num, self.trace, self.model_path, tail)[
                         :-4] + '&global.csv'
-            bandwidth_flow_data = FlowData(data_file)
+            bandwidth_flow_data = FlowData(data_file, p_dir=self.p_dir)
             self.ori_seq, self.ori_bandwidth = bandwidth_flow_data.seqs, bandwidth_flow_data.delivery_rate
 
     def get_ori_band_width(self, seq):
