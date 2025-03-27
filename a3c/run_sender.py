@@ -10,9 +10,28 @@ import socket, sys
 from concurrent import futures
 from env.global_state import GlobalState
 import yaml
+from helpers.helpers import apply_op
 
 INF_CWND = 10000
-TOTAL_BW = 12
+MIN_CWND = 1.0
+MAX_CWND = 40.0
+
+def format_actions(action_list):
+    """ Returns the action list, initially a list with elements "[op][val]"
+    like /2.0, -3.0, +1.0, formatted as a dictionary.
+
+    The dictionary keys are the unique indices (to retrieve the action) and
+    the values are lists ['op', val], such as ['+', '2.0'].
+    """
+    return {idx: [action[0], float(action[1:])]
+            for idx, action in enumerate(action_list)}
+action_mapping = format_actions(["/2.0", "-10.0", "+0.0", "+10.0", "*2.0"])
+def take_action(cwnd, action_idx):
+    op, val = action_mapping[action_idx]
+
+    new_cwnd = apply_op(op, cwnd, val)
+    target_cwnd = min(max(MIN_CWND, new_cwnd), MAX_CWND)
+    return target_cwnd
 
 class Learner(object):
     def __init__(self, state_dim, action_cnt, restore_vars, lstm_layers=2):
@@ -54,23 +73,40 @@ class Learner(object):
         # self.lstm_state = lstm_state_out
         return action
 
-    def programming_action(self, state):
-        send_rate_ewma = state[2]
-        client_num = state[-1]
-        total_bw = TOTAL_BW
+    # state: delay、delivery_rate、send_rate、cwnd，分布[3]，client_num
+    def programming_action(self, state, cur_cwnd):
+        # send_rate_ewma = state[2]
+        # client_num = state[-1]
+        mean_cwnd = state[3]
 
-        action = 2
-        x = send_rate_ewma / (total_bw/client_num) - 1
-        if x < -0.2:
-            action += 2
-        elif x < -0.05 :
-            action += 1
-        elif x > 0.05:
-            action -= 1
-        elif x > 0.2:
-            action -= 2
+        flat_step_state_buf = np.asarray(state[:4], dtype=np.float32).ravel()
 
-        return action
+        # state = EWMA of past step
+        ewma_delay = ewma(flat_step_state_buf, 3)
+
+        ops_to_run = [self.pi.action_probs]  # , self.pi.lstm_state_out]
+        feed_dict = {
+            self.pi.states: [ewma_delay],
+            self.pi.indices: [0],
+            # self.pi.lstm_state_in: self.lstm_state,
+        }
+
+        ret = self.session.run(ops_to_run, feed_dict)
+        action_probs = ret  # , lstm_state_out = ret
+
+        expect_action = np.argmax(action_probs)
+        expect_cwnd = take_action(mean_cwnd, expect_action)
+
+        best_action = -1
+        best_delta = MAX_CWND
+        for act in range(5):
+            new_cwnd = take_action(cur_cwnd, act)
+            delta = abs(new_cwnd - expect_cwnd)
+            if delta < best_delta:
+                best_delta = delta
+                best_action = act
+
+        return best_action
 
 
 
@@ -109,7 +145,7 @@ def multi_main():
     with open('config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
     flows = config_data['flows']
-    max_cwnds = config_data.get('max_cwnds', [INF_CWND for _ in range(flows)])
+    max_cwnds = config_data.get('max_cwnds', [INF_CWND for _ in range(flows)]) # no limit when there has no ‘max_cwnds’ in template.yaml
     if len(max_cwnds) < flows:
         max_cwnds.extend([INF_CWND]*(flows-len(max_cwnds)))
     step_len_ms = config_data['step_len_ms']
