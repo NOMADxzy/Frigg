@@ -80,7 +80,7 @@ class Learner(object):
         # client_num = state[-1]
         mean_cwnd = state[3]
 
-        flat_step_state_buf = np.asarray(state[:4], dtype=np.float32).ravel()
+        flat_step_state_buf = np.asarray(state, dtype=np.float32).ravel()
 
         # state = EWMA of past step
         ewma_delay = ewma(flat_step_state_buf, 3)
@@ -155,8 +155,8 @@ def multi_main():
     trace = config_data['trace']
 
     model_name_dict = {'mfg': 'checkpoint-80', 'no_field': 'model', 'low_lstm_layer': 'checkpoint-160',
-                       'indigo': 'model', 'dynamic_programming': 'model'}
-    state_dim = 7 if model_name == 'mfg' else 4
+                       'indigo': 'model', 'dynamic_programming': 'checkpoint-80'}
+    state_dim = 7 if model_name == 'mfg' or model_name == 'dynamic_programming' else 4
 
     #  shared things
     senders = []

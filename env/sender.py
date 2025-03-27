@@ -350,7 +350,7 @@ class Sender(object):
                         self.take_action(min(action, 3))
                 elif self.model_name == 'dynamic_programming':
                     input_state = self.global_state.get_input_state(cur_state)
-                    action = self.programming_action(input_state, self.cwnd)
+                    action = self.programming_action(input_state[:self.state_dim], self.cwnd)
                     self.take_action(action)
                 else:
                     raise ValueError
