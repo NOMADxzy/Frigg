@@ -312,9 +312,11 @@ class Sender(object):
                 # self.set_cwnd(cwnd_val)
 
                 if self.is_mfg:
-                    if self.delay_ewma > 100 * int(math.sqrt(20/self.sender_num)):
+                    # if self.delay_ewma > 50000 * int(math.sqrt(20/self.sender_num)):
+                    if self.delay_ewma > 200:
                         action = 0
-                    elif self.delay_ewma > 50 * int(math.sqrt(20/self.sender_num)):
+                    # elif self.delay_ewma > 20000 * int(math.sqrt(20/self.sender_num)):
+                    elif self.delay_ewma > 100:
                         action = 1
                     else:
                         if not self.global_state is None:
@@ -374,7 +376,7 @@ class Sender(object):
                      self.global_state.cwnd, 0, curr_ts_ms()-self.ts_first, 0, 0, 0])
 
             if len(self.metric_data) % 100 is 0:
-                if curr_ts_ms() - self.ts_first > 12000:
+                if curr_ts_ms() - self.ts_first > 8000:
                     self.output_metric()
 
             if self.debug:
