@@ -14,6 +14,7 @@ import yaml
 from helpers.helpers import apply_op
 
 INF_CWND = 10000
+INF_SEND_RATE = 1000
 MIN_CWND = 1.0
 MAX_CWND = 40.0
 
@@ -146,9 +147,9 @@ def multi_main():
     with open('config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
     flows = config_data['flows']
-    max_cwnds = config_data.get('max_cwnds', [INF_CWND for _ in range(flows)]) # no limit when there has no ‘max_cwnds’ in template.yaml
-    if len(max_cwnds) < flows:
-        max_cwnds.extend([INF_CWND]*(flows-len(max_cwnds)))
+    max_send_rates = config_data.get('max_cwnds', [INF_SEND_RATE for _ in range(flows)]) # no limit when there has no ‘max_cwnds’ in template.yaml
+    if len(max_send_rates) < flows:
+        max_send_rates.extend([INF_SEND_RATE]*(flows-len(max_send_rates)))
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
     model_name = config_data['model_name']
@@ -175,7 +176,7 @@ def multi_main():
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
                         step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
-                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_cwnd=max_cwnds[i])
+                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_send_rate=max_send_rates[i])
         sender.set_sample_action(learner.sample_action)
         sender.set_programming_action(learner.programming_action)
         senders.append(sender)

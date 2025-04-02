@@ -17,6 +17,7 @@ import copy, math
 
 MIN_CWND = 1.0
 MAX_CWND = 40.0
+MAX_SEND_RATE = 1000
 
 
 def format_actions(action_list):
@@ -49,7 +50,7 @@ class Sender(object):
     action_cnt = len(action_mapping)
 
     def __init__(self, id=0, sender_num=1, port=0, train=False, debug=False, global_state=None, step_len_ms=10,
-                 meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0, max_cwnd=MAX_CWND):
+                 meter_bandwidth=False, trace="", model_name="", state_dim=4, wait_second=0, max_cwnd=MAX_CWND, max_send_rate=MAX_SEND_RATE):
         self.sample_action = None
         self.programming_action = None
         self.train = train
@@ -64,6 +65,7 @@ class Sender(object):
         self.is_mfg = self.model_name == 'mfg'
         self.wait_second = wait_second
         self.max_cwnd = max_cwnd
+        self.max_send_rate = max_send_rate
 
         self.fix_window = 40
         self.run_data_tail = "&fix_window_{}".format(self.fix_window) if self.meter_bandwidth else ''
@@ -102,6 +104,7 @@ class Sender(object):
         self.min_rtt = float('inf')
         self.delay_ewma = None
         self.send_rate_ewma = None
+        self.send_rate = None
         self.delivery_rate_ewma = None
 
         self.step_start_ms = None
@@ -218,6 +221,7 @@ class Sender(object):
 
         # Update Vegas sending rate
         send_rate = 0.008 * (self.sent_bytes - ack.sent_bytes) / max(1, rtt)
+        self.send_rate = send_rate
 
         if self.send_rate_ewma is None:
             self.send_rate_ewma = send_rate
@@ -226,11 +230,19 @@ class Sender(object):
                     0.875 * self.send_rate_ewma + 0.125 * send_rate)
 
     def take_action(self, action_idx):
-        old_cwnd = self.cwnd
+        if self.max_send_rate<MAX_SEND_RATE: # 限速补丁
+            delta = abs(self.send_rate - self.max_send_rate) / self.max_send_rate
+            if delta > 0.1:
+                self.cwnd = max(0, self.cwnd-1)
+            elif delta < -0.1:
+                self.cwnd += 1
+            return
+
         op, val = self.action_mapping[action_idx]
 
         self.cwnd = apply_op(op, self.cwnd, val)
         target_cwnd = min(max(MIN_CWND, self.cwnd), self.max_cwnd)
+
         self.cwnd = target_cwnd
 
     def set_cwnd(self, cwnd):
