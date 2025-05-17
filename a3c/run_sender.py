@@ -147,9 +147,9 @@ def multi_main():
     with open('config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
     flows = config_data['flows']
-    max_send_rates = config_data.get('max_cwnds', [INF_SEND_RATE for _ in range(flows)]) # no limit when there has no ‘max_cwnds’ in template.yaml
-    if len(max_send_rates) < flows:
-        max_send_rates.extend([INF_SEND_RATE]*(flows-len(max_send_rates)))
+    limit_vals = config_data.get('max_cwnds', [INF_SEND_RATE for _ in range(flows)]) # no limit when there has no ‘max_cwnds’ in template.yaml
+    if len(limit_vals) < flows:
+        limit_vals.extend([INF_SEND_RATE]*(flows-len(limit_vals)))
     step_len_ms = config_data['step_len_ms']
     meter_bandwidth = config_data['meter_bandwidth']
     model_name = config_data['model_name']
@@ -176,7 +176,7 @@ def multi_main():
         # start sender as an instance of Sender class  sender_num, step_len_ms
         sender = Sender(id=i, sender_num=flows, port=port, train=False, global_state=global_state,
                         step_len_ms=step_len_ms, meter_bandwidth=meter_bandwidth, trace=trace,
-                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_send_rate=max_send_rates[i])
+                        model_name=model_name, state_dim=state_dim, wait_second=i*wait_interval, max_cwnd=limit_vals[i])
         sender.set_sample_action(learner.sample_action)
         sender.set_programming_action(learner.programming_action)
         senders.append(sender)

@@ -230,12 +230,16 @@ class Sender(object):
                     0.875 * self.send_rate_ewma + 0.125 * send_rate)
 
     def take_action(self, action_idx):
+        # sys.stderr.write(str(self.max_send_rate))
+        # sys.stderr.write(str(self.send_rate))
         if self.max_send_rate<MAX_SEND_RATE: # 限速补丁
-            delta = abs(self.send_rate - self.max_send_rate) / self.max_send_rate
+            delta = (self.send_rate - self.max_send_rate) / self.max_send_rate
+            # sys.stderr.write(str(delta))
             if delta > 0.1:
                 self.cwnd = max(0, self.cwnd-1)
             elif delta < -0.1:
                 self.cwnd += 1
+            # sys.stderr.write(str(self.cwnd))
             return
 
         op, val = self.action_mapping[action_idx]
@@ -299,7 +303,12 @@ class Sender(object):
             # 更新状态
             cur_state = copy.deepcopy(state)
             cur_state.append(self.port)
+
+            tmp_time = time.time()  # 记录开始时间
+            # 被测试的代码段
             self.global_state.UpdateMetric(cur_state, debug=self.step_cnt % 50 == 0)
+            execution_time = time.time() - tmp_time  # 计算耗时
+            # sys.stderr.write("更新状态耗时: "+str(execution_time)+" 秒\n")
 
             start_time = time.time()
             # 要计时的代码
